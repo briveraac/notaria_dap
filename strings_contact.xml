@@ -1,0 +1,30 @@
+<resources>
+    <string name="contact_title">Contáctanos</string>
+    <string name="contact_privacy">Este formulario no publica tu nombre, correo ni mensaje a otros usuarios. Puedes usar un alias.</string>
+    <string name="contact_demo_notice">Utiliza datos ficticios de prueba, por ejemplo prueba@example.com. Al confirmar, la consulta se guarda en este dispositivo; no se envía ningún correo.</string>
+    <string name="contact_name">Nombre o alias</string>
+    <string name="contact_email">Correo electrónico</string>
+    <string name="contact_reason">Motivo de contacto</string>
+    <string name="contact_message">Mensaje</string>
+    <string name="contact_counter">%1$d / %2$d caracteres</string>
+    <string name="contact_continue">Continuar</string>
+    <string name="contact_reason_query">Consulta</string>
+    <string name="contact_reason_suggestion">Sugerencia</string>
+    <string name="contact_reason_problem">Problema</string>
+    <string name="contact_reason_other">Otro</string>
+    <string name="contact_reason_selected">Seleccionado: %1$s</string>
+    <string name="contact_reason_option">Seleccionar: %1$s</string>
+    <string name="contact_error_required">Este campo es obligatorio.</string>
+    <string name="contact_error_name">Escribe entre 2 y 60 caracteres.</string>
+    <string name="contact_error_email">Introduce un correo válido, como prueba@example.com, sin espacios y de hasta 254 caracteres.</string>
+    <string name="contact_error_message">Escribe entre 10 y 2.000 caracteres.</string>
+    <string name="contact_review_title">Revisa los datos</string>
+    <string name="contact_review_field">%1$s: %2$s</string>
+    <string name="contact_confirm_notice">Al confirmar, guardaremos la consulta en este dispositivo. No se enviará ningún correo.</string>
+    <string name="contact_confirm">Confirmar y guardar</string>
+    <string name="contact_edit">Volver a editar</string>
+    <string name="contact_reviewed_notice">Revisión completada.</string>
+    <string name="contact_saving">Guardando consulta…</string>
+    <string name="contact_saved">Consulta guardada en este dispositivo. No se ha enviado ningún correo.</string>
+    <string name="contact_save_error">No pudimos guardar la consulta. Tus datos siguen aquí; puedes volver a intentarlo.</string>
+</resources>

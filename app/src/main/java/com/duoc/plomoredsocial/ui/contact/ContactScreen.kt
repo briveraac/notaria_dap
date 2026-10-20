@@ -3,7 +3,10 @@ package com.duoc.plomoredsocial.ui.contact
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -16,6 +19,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.ui.Alignment
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -30,6 +41,10 @@ import com.duoc.plomoredsocial.model.ContactError
 import com.duoc.plomoredsocial.model.ContactReason
 import com.duoc.plomoredsocial.model.ContactValidator
 import com.duoc.plomoredsocial.ui.theme.PlomoRedSocialTheme
+import com.duoc.plomoredsocial.ui.components.MygosScreen
+import com.duoc.plomoredsocial.ui.components.MygosCard
+import com.duoc.plomoredsocial.ui.components.MygosNotice
+import com.duoc.plomoredsocial.ui.components.MygosPrimaryButton
 
 // Pasa a la pantalla los datos del ViewModel y las acciones de los botones.
 @Composable
@@ -43,7 +58,8 @@ fun ContactScreen(viewModel: ContactViewModel, modifier: Modifier = Modifier) {
         onContinue = viewModel::continueToReview,
         onDismiss = viewModel::dismissReview,
         onConfirm = viewModel::confirmReview,
-        modifier = modifier
+        modifier = modifier,
+        showTitle = false
     )
 }
 
@@ -59,18 +75,40 @@ fun ContactScreenContent(
     onContinue: () -> Unit,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showTitle: Boolean = true
 ) {
-    Column(
-        modifier = modifier.verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text(stringResource(R.string.contact_title), style = MaterialTheme.typography.headlineMedium)
-        Text(stringResource(R.string.contact_privacy))
-        Text(stringResource(R.string.contact_demo_notice))
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+        focusedContainerColor = MaterialTheme.colorScheme.surface,
+        errorContainerColor = MaterialTheme.colorScheme.surface
+    )
+    MygosScreen(modifier) {
+        // La barra superior ya muestra el título; la vista previa puede mostrarlo aquí.
+        if (showTitle) Text(
+            stringResource(R.string.contact_title),
+            style = MaterialTheme.typography.headlineMedium
+        )
+        Text(
+            stringResource(R.string.contact_intro),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        MygosCard {
+            Text(
+                stringResource(R.string.contact_privacy),
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                stringResource(R.string.contact_demo_notice),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         // Los campos con error se marcan en rojo.
         // El error y el contador van en líneas separadas para que no se pisen.
         OutlinedTextField(
+            shape = MaterialTheme.shapes.small,
+            colors = fieldColors,
             value = state.nameOrAlias,
             onValueChange = onNameChange,
             enabled = state.saveStatus != ContactSaveStatus.LOADING,
@@ -80,12 +118,20 @@ fun ContactScreenContent(
             supportingText = {
                 Column {
                     FieldSupport(state.errors.name)
-                    Text(stringResource(R.string.contact_counter, state.nameOrAlias.length, ContactValidator.NAME_MAX))
+                    Text(
+                        stringResource(
+                            R.string.contact_counter,
+                            state.nameOrAlias.length,
+                            ContactValidator.NAME_MAX
+                        )
+                    )
                 }
             },
             modifier = Modifier.fillMaxWidth()
         )
         OutlinedTextField(
+            shape = MaterialTheme.shapes.small,
+            colors = fieldColors,
             value = state.email,
             onValueChange = onEmailChange,
             enabled = state.saveStatus != ContactSaveStatus.LOADING,
@@ -97,22 +143,31 @@ fun ContactScreenContent(
             modifier = Modifier.fillMaxWidth()
         )
         Text(stringResource(R.string.contact_reason), style = MaterialTheme.typography.titleMedium)
-        // El texto del botón indica qué motivo está seleccionado.
-        ContactReason.entries.forEach { reason ->
-            TextButton(
-                onClick = { onReasonChange(reason) },
-                enabled = state.saveStatus != ContactSaveStatus.LOADING,
-                contentPadding = PaddingValues(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(
-                    if (state.reason == reason) R.string.contact_reason_selected else R.string.contact_reason_option,
-                    stringResource(reason.labelResource())
-                ))
+        // El indicador de selección y el color señalan el motivo elegido.
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ContactReason.entries.forEach { reason ->
+                FilterChip(
+                    selected = state.reason == reason,
+                    onClick = { onReasonChange(reason) },
+                    enabled = state.saveStatus != ContactSaveStatus.LOADING,
+                    modifier = Modifier.heightIn(min = 48.dp),
+                    label = { Text(stringResource(reason.labelResource())) },
+                    leadingIcon = if (state.reason == reason) {
+                        {
+                            Icon(
+                                Icons.Filled.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    } else null
+                )
             }
         }
         FieldSupport(state.errors.reason)
         OutlinedTextField(
+            shape = MaterialTheme.shapes.small,
+            colors = fieldColors,
             value = state.message,
             onValueChange = onMessageChange,
             enabled = state.saveStatus != ContactSaveStatus.LOADING,
@@ -122,30 +177,46 @@ fun ContactScreenContent(
             supportingText = {
                 Column {
                     FieldSupport(state.errors.message)
-                    Text(stringResource(R.string.contact_counter, state.message.length, ContactValidator.MESSAGE_MAX))
+                    Text(
+                        stringResource(
+                            R.string.contact_counter,
+                            state.message.length,
+                            ContactValidator.MESSAGE_MAX
+                        )
+                    )
                 }
             },
             modifier = Modifier.fillMaxWidth()
         )
         // Continuar revisa los campos antes de abrir el resumen.
-        Button(
+        MygosPrimaryButton(
+            text = stringResource(R.string.contact_continue),
             onClick = onContinue,
-            enabled = state.saveStatus != ContactSaveStatus.LOADING && state.saveStatus != ContactSaveStatus.SUCCESS,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.contact_continue))
-        }
+            enabled = state.saveStatus != ContactSaveStatus.LOADING && state.saveStatus != ContactSaveStatus.SUCCESS
+        )
         // El éxito aparece después de que Room devuelve el ID insertado.
         when (state.saveStatus) {
             ContactSaveStatus.LOADING -> {
-                CircularProgressIndicator()
-                Text(stringResource(R.string.contact_saving))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                    Text(stringResource(R.string.contact_saving))
+                }
             }
-            ContactSaveStatus.SUCCESS -> Text(stringResource(R.string.contact_saved))
-            ContactSaveStatus.ERROR -> Text(
-                stringResource(R.string.contact_save_error),
-                color = MaterialTheme.colorScheme.error
+
+            ContactSaveStatus.SUCCESS -> MygosNotice(
+                stringResource(R.string.contact_saved),
+                icon = Icons.Filled.CheckCircle
             )
+
+            ContactSaveStatus.ERROR -> MygosNotice(
+                stringResource(R.string.contact_save_error),
+                isError = true,
+                icon = Icons.Filled.Warning
+            )
+
             ContactSaveStatus.IDLE -> Unit
         }
     }
@@ -153,6 +224,7 @@ fun ContactScreenContent(
     // Volver a editar conserva los datos. Confirmar los guarda solo en este dispositivo.
     if (state.reviewVisible) {
         AlertDialog(
+            containerColor = MaterialTheme.colorScheme.surface,
             onDismissRequest = onDismiss,
             title = { Text(stringResource(R.string.contact_review_title)) },
             text = {
@@ -160,17 +232,47 @@ fun ContactScreenContent(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(stringResource(R.string.contact_review_field, stringResource(R.string.contact_name), state.nameOrAlias.trim()))
-                    Text(stringResource(R.string.contact_review_field, stringResource(R.string.contact_email), state.email.trim()))
+                    Text(
+                        stringResource(
+                            R.string.contact_review_field,
+                            stringResource(R.string.contact_name),
+                            state.nameOrAlias.trim()
+                        )
+                    )
+                    Text(
+                        stringResource(
+                            R.string.contact_review_field,
+                            stringResource(R.string.contact_email),
+                            state.email.trim()
+                        )
+                    )
                     state.reason?.let { reason ->
-                        Text(stringResource(R.string.contact_review_field, stringResource(R.string.contact_reason), stringResource(reason.labelResource())))
+                        Text(
+                            stringResource(
+                                R.string.contact_review_field,
+                                stringResource(R.string.contact_reason),
+                                stringResource(reason.labelResource())
+                            )
+                        )
                     }
-                    Text(stringResource(R.string.contact_review_field, stringResource(R.string.contact_message), state.message.trim()))
+                    Text(
+                        stringResource(
+                            R.string.contact_review_field,
+                            stringResource(R.string.contact_message),
+                            state.message.trim()
+                        )
+                    )
                     Text(stringResource(R.string.contact_confirm_notice))
                 }
             },
             confirmButton = {
-                TextButton(onClick = onConfirm) { Text(stringResource(R.string.contact_confirm)) }
+                Button(
+                    onClick = onConfirm,
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier.heightIn(min = 48.dp)
+                ) {
+                    Text(stringResource(R.string.contact_confirm))
+                }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) { Text(stringResource(R.string.contact_edit)) }
@@ -184,12 +286,14 @@ fun ContactScreenContent(
 private fun FieldSupport(error: ContactError?) {
     if (error != null) {
         Text(
-            stringResource(when (error) {
-                ContactError.REQUIRED -> R.string.contact_error_required
-                ContactError.NAME_LENGTH -> R.string.contact_error_name
-                ContactError.EMAIL_FORMAT -> R.string.contact_error_email
-                ContactError.MESSAGE_LENGTH -> R.string.contact_error_message
-            }),
+            stringResource(
+                when (error) {
+                    ContactError.REQUIRED -> R.string.contact_error_required
+                    ContactError.NAME_LENGTH -> R.string.contact_error_name
+                    ContactError.EMAIL_FORMAT -> R.string.contact_error_email
+                    ContactError.MESSAGE_LENGTH -> R.string.contact_error_message
+                }
+            ),
             color = MaterialTheme.colorScheme.error
         )
     }

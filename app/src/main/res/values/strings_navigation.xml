@@ -1,4 +1,13 @@
 <resources>
+    <string name="nav_brand">Mygos</string>
+    <string name="nav_home_description">Descubre actividades. Conecta con personas como tú.</string>
+    <string name="nav_search_description">Un espacio para encontrar actividades y personas con tus intereses.</string>
+    <string name="nav_activities_description">Tus planes y encuentros, en un solo lugar.</string>
+    <string name="nav_profile_description">Tu espacio en Mygos y un acceso directo a nuestro formulario de contacto.</string>
+    <string name="nav_access_description">Tu próximo paso para conectar con la comunidad de Mygos.</string>
+    <string name="nav_pending_title">Próximamente</string>
+    <string name="nav_contact_description">¿Dudas, sugerencias o algún problema? Estamos aquí para ayudarte.</string>
+    <string name="nav_account">Acceso a tu cuenta</string>
     <string name="nav_home">Inicio</string>
     <string name="nav_search">Buscar</string>
     <string name="nav_activities">Actividades</string>

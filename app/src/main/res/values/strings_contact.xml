@@ -1,4 +1,5 @@
 <resources>
+    <string name="contact_intro">Estamos aquí para ayudarte. Cuéntanos tu duda, sugerencia o problema.</string>
     <string name="contact_title">Contáctanos</string>
     <string name="contact_privacy">Este formulario no publica tu nombre, correo ni mensaje a otros usuarios. Puedes usar un alias.</string>
     <string name="contact_demo_notice">Utiliza datos ficticios de prueba, por ejemplo prueba@example.com. Al confirmar, la consulta se guarda en este dispositivo; no se envía ningún correo.</string>

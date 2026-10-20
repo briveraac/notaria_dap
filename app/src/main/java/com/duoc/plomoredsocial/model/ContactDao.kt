@@ -1,5 +1,5 @@
 // Consultas que Room convierte en operaciones SQLite.
-package com.duoc.plomoredsocial.data.local.contact
+package com.duoc.plomoredsocial.model
 
 import androidx.room.Dao
 import androidx.room.Insert

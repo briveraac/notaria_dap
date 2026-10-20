@@ -1,5 +1,5 @@
 // Recibe las acciones de la pantalla y guarda la consulta a través del repositorio.
-package com.duoc.plomoredsocial.ui.contact
+package com.duoc.plomoredsocial.viewmodel
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -7,9 +7,9 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.duoc.plomoredsocial.data.contact.ContactRepository
-import com.duoc.plomoredsocial.domain.contact.ContactReason
-import com.duoc.plomoredsocial.domain.contact.ContactValidator
+import com.duoc.plomoredsocial.repository.ContactRepository
+import com.duoc.plomoredsocial.model.ContactReason
+import com.duoc.plomoredsocial.model.ContactValidator
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 

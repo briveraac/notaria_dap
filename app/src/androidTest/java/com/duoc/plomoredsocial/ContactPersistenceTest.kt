@@ -2,15 +2,15 @@
 package com.duoc.plomoredsocial
 
 import androidx.room.Room
-import com.duoc.plomoredsocial.data.local.contact.ContactDao
-import com.duoc.plomoredsocial.data.local.contact.ContactEntity
-import com.duoc.plomoredsocial.ui.contact.ContactSaveStatus
-import com.duoc.plomoredsocial.ui.contact.ContactViewModel
+import com.duoc.plomoredsocial.model.ContactDao
+import com.duoc.plomoredsocial.model.ContactEntity
+import com.duoc.plomoredsocial.viewmodel.ContactSaveStatus
+import com.duoc.plomoredsocial.viewmodel.ContactViewModel
 import androidx.test.platform.app.InstrumentationRegistry
-import com.duoc.plomoredsocial.data.contact.ContactRepository
-import com.duoc.plomoredsocial.data.local.MygosDatabase
-import com.duoc.plomoredsocial.domain.contact.ContactReason
-import com.duoc.plomoredsocial.domain.contact.ContactRequest
+import com.duoc.plomoredsocial.repository.ContactRepository
+import com.duoc.plomoredsocial.model.MygosDatabase
+import com.duoc.plomoredsocial.model.ContactReason
+import com.duoc.plomoredsocial.model.ContactRequest
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test

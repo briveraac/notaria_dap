@@ -1,10 +1,10 @@
 // Une los datos del formulario con Room, sin depender de la pantalla.
-package com.duoc.plomoredsocial.data.contact
+package com.duoc.plomoredsocial.repository
 
-import com.duoc.plomoredsocial.data.local.contact.ContactDao
-import com.duoc.plomoredsocial.data.local.contact.ContactEntity
-import com.duoc.plomoredsocial.domain.contact.ContactRequest
-import com.duoc.plomoredsocial.domain.contact.ContactValidator
+import com.duoc.plomoredsocial.model.ContactDao
+import com.duoc.plomoredsocial.model.ContactEntity
+import com.duoc.plomoredsocial.model.ContactRequest
+import com.duoc.plomoredsocial.model.ContactValidator
 
 class ContactRepository(private val dao: ContactDao) {
     // También validamos aquí para que otro punto de entrada no guarde datos inválidos.

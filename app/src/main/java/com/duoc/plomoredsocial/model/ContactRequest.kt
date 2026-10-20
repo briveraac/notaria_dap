@@ -1,5 +1,5 @@
 // Datos que se completan en Contáctanos.
-package com.duoc.plomoredsocial.domain.contact
+package com.duoc.plomoredsocial.model
 
 // Motivos que puede elegir el usuario.
 enum class ContactReason {

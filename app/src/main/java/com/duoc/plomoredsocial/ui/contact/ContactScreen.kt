@@ -22,10 +22,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.duoc.plomoredsocial.viewmodel.ContactViewModel
+import com.duoc.plomoredsocial.viewmodel.ContactUiState
+import com.duoc.plomoredsocial.viewmodel.ContactSaveStatus
 import com.duoc.plomoredsocial.R
-import com.duoc.plomoredsocial.domain.contact.ContactError
-import com.duoc.plomoredsocial.domain.contact.ContactReason
-import com.duoc.plomoredsocial.domain.contact.ContactValidator
+import com.duoc.plomoredsocial.model.ContactError
+import com.duoc.plomoredsocial.model.ContactReason
+import com.duoc.plomoredsocial.model.ContactValidator
 import com.duoc.plomoredsocial.ui.theme.PlomoRedSocialTheme
 
 // Pasa a la pantalla los datos del ViewModel y las acciones de los botones.

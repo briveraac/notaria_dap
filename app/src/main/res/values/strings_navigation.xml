@@ -1,0 +1,10 @@
+<resources>
+    <string name="nav_home">Inicio</string>
+    <string name="nav_search">Buscar</string>
+    <string name="nav_activities">Actividades</string>
+    <string name="nav_profile">Perfil</string>
+    <string name="nav_login">Iniciar sesión</string>
+    <string name="nav_register">Crear cuenta</string>
+    <string name="nav_back">Volver</string>
+    <string name="nav_temporary">Pantalla temporal. Esta sección está pendiente de implementación.</string>
+</resources>

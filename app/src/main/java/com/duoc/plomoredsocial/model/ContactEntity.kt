@@ -1,5 +1,5 @@
 // Cada fila es una consulta guardada en este dispositivo.
-package com.duoc.plomoredsocial.data.local.contact
+package com.duoc.plomoredsocial.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

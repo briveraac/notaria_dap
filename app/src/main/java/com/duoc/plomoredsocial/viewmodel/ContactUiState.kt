@@ -1,9 +1,9 @@
 // Datos y avisos que se muestran en el formulario.
-package com.duoc.plomoredsocial.ui.contact
+package com.duoc.plomoredsocial.viewmodel
 
-import com.duoc.plomoredsocial.domain.contact.ContactErrors
-import com.duoc.plomoredsocial.domain.contact.ContactReason
-import com.duoc.plomoredsocial.domain.contact.ContactRequest
+import com.duoc.plomoredsocial.model.ContactErrors
+import com.duoc.plomoredsocial.model.ContactReason
+import com.duoc.plomoredsocial.model.ContactRequest
 
 // Guarda lo escrito y los errores de cada campo.
 // validationAttempted activa los errores después del primer Continuar.

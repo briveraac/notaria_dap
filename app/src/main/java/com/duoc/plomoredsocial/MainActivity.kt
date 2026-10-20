@@ -1,4 +1,4 @@
-// Entrada de la app. Por ahora abre Contáctanos para poder probarlo.
+// Entrada de Mygos: prepara MAIN-003 y abre la navegación de MAIN-006.
 package com.duoc.plomoredsocial
 
 import android.os.Bundle
@@ -6,20 +6,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.ViewModelProvider
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.duoc.plomoredsocial.ui.theme.PlomoRedSocialTheme
-import com.duoc.plomoredsocial.ui.contact.ContactScreen
-import com.duoc.plomoredsocial.ui.contact.ContactViewModel
-import com.duoc.plomoredsocial.data.contact.ContactRepository
-import com.duoc.plomoredsocial.data.local.MygosDatabase
+import com.duoc.plomoredsocial.ui.navigation.MygosApp
+import com.duoc.plomoredsocial.viewmodel.ContactViewModel
+import com.duoc.plomoredsocial.repository.ContactRepository
+import com.duoc.plomoredsocial.model.MygosDatabase
 
-// Mantiene la pantalla original mientras probamos Contáctanos.
+// La actividad entrega las dependencias sin trasladar lógica de negocio a las pantallas.
 class MainActivity : ComponentActivity() {
     // Obtiene el ViewModel de la actividad y prepara la pantalla.
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,23 +26,9 @@ class MainActivity : ComponentActivity() {
         val contactViewModel = ViewModelProvider(
             this, ContactViewModel.Factory(repository)
         )[ContactViewModel::class.java]
-        // Cambiar a false para volver al saludo original cuando terminemos las pruebas.
-        val previewContact = true
         setContent {
             PlomoRedSocialTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    if (previewContact) {
-                        ContactScreen(
-                            viewModel = contactViewModel,
-                            modifier = Modifier.padding(innerPadding)
-                        )
-                    } else {
-                        Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                        )
-                    }
-                }
+                MygosApp(contactViewModel = contactViewModel)
             }
         }
     }

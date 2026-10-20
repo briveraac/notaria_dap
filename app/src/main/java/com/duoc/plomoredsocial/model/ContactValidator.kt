@@ -1,5 +1,5 @@
 // Reglas para revisar los datos antes de abrir la confirmación.
-package com.duoc.plomoredsocial.domain.contact
+package com.duoc.plomoredsocial.model
 
 // Errores que luego mostramos junto a cada campo.
 enum class ContactError {

@@ -1,12 +1,12 @@
 // Base local compartida. Aquí se pueden incorporar las tablas de las otras tareas.
-package com.duoc.plomoredsocial.data.local
+package com.duoc.plomoredsocial.model
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.duoc.plomoredsocial.data.local.contact.ContactDao
-import com.duoc.plomoredsocial.data.local.contact.ContactEntity
+import com.duoc.plomoredsocial.model.ContactDao
+import com.duoc.plomoredsocial.model.ContactEntity
 
 @Database(entities = [ContactEntity::class], version = 1, exportSchema = true)
 abstract class MygosDatabase : RoomDatabase() {

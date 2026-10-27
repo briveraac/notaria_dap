@@ -16,11 +16,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.duoc.plomoredsocial.R
 import com.duoc.plomoredsocial.ui.components.*
+import com.duoc.plomoredsocial.model.AuthUser
 
 // Solo cubre destinos sin pantalla propia. No inventa perfiles ni actividades.
 @Composable
 internal fun TemporaryScreen(
     destination: MygosDestination,
+    user: AuthUser? = null,
+    onLogout: () -> Unit = {},
     onNavigate: (MygosDestination) -> Unit
 ) {
     val icon = when (destination) {
@@ -94,7 +97,16 @@ internal fun TemporaryScreen(
                     stringResource(R.string.contact_title),
                     { onNavigate(MygosDestination.CONTACT) })
             }
-            // Los accesos conservan sus rutas temporales; no simulan una sesión real.
+            if (user != null) {
+                MygosCard {
+                    Text(stringResource(R.string.session_account), style = MaterialTheme.typography.titleMedium)
+                    Text(user.name, style = MaterialTheme.typography.titleLarge)
+                    Text(user.email, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedButton(onClick = onLogout, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                        Text(stringResource(R.string.session_logout))
+                    }
+                }
+            } else {
             MygosCard {
                 Text(
                     stringResource(R.string.nav_account),
@@ -116,11 +128,7 @@ internal fun TemporaryScreen(
                     Text(stringResource(R.string.nav_register))
                 }
             }
-        }
-        if (destination == MygosDestination.LOGIN) {
-            MygosPrimaryButton(
-                stringResource(R.string.nav_register),
-                { onNavigate(MygosDestination.REGISTER) })
+            }
         }
     }
 }

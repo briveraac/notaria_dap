@@ -1,0 +1,23 @@
+<resources>
+    <string name="home_feed_title">Explora actividades</string>
+    <string name="home_discover_title">¡Encuentra tu próxima actividad!</string>
+    <string name="home_discover_description">Explora actividades y conoce personas con tus mismos intereses. Para participar, debes iniciar sesión o crear una cuenta.</string>
+    <string name="home_status_open">Abierta</string>
+    <string name="home_status_in_progress">En progreso</string>
+    <string name="home_status_complete">Completa</string>
+    <string name="home_participants">%1$d/%2$d participantes</string>
+    <string name="home_view_activity">Ver actividad</string>
+    <string name="home_access_title">Accede a tu cuenta</string>
+    <string name="home_access_description">Para ver la actividad, inicia sesión o crea una cuenta.</string>
+    <string name="home_cancel">Cancelar</string>
+    <string name="home_close">Cerrar</string>
+    <string name="home_demo_detail">Actividad ficticia de demostración. Solo consulta de información.</string>
+    <string name="home_feed_empty">Todavía no hay actividades disponibles.</string>
+    <string name="home_feed_error">No pudimos cargar las actividades.</string>
+    <string name="interest_outdoors">Aire libre</string>
+    <string name="interest_sports">Deportes</string>
+    <string name="interest_culture">Cultura</string>
+    <string name="interest_games">Juegos</string>
+    <string name="interest_technology">Tecnología</string>
+    <string name="interest_community">Comunidad</string>
+</resources>

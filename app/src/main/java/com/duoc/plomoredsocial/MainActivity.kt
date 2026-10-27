@@ -18,6 +18,8 @@ import com.duoc.plomoredsocial.model.MygosDatabase
 import com.duoc.plomoredsocial.repository.TemporaryAuthRepository
 import com.duoc.plomoredsocial.repository.LocalSessionStore
 import com.duoc.plomoredsocial.viewmodel.LoginViewModel
+import com.duoc.plomoredsocial.viewmodel.HomeViewModel
+import com.duoc.plomoredsocial.repository.RoomActivityRepository
 
 // La actividad entrega las dependencias sin trasladar lógica de negocio a las pantallas.
 class MainActivity : ComponentActivity() {
@@ -35,9 +37,15 @@ class MainActivity : ComponentActivity() {
                 LocalSessionStore(applicationContext.noBackupFilesDir)
             )
         )[LoginViewModel::class.java]
+        val homeViewModel = ViewModelProvider(
+            this, HomeViewModel.Factory(
+                RoomActivityRepository(MygosDatabase.getInstance(applicationContext).activityDao())
+            )
+        )[HomeViewModel::class.java]
         setContent {
             PlomoRedSocialTheme {
-                MygosApp(contactViewModel = contactViewModel, loginViewModel = loginViewModel)
+                MygosApp(contactViewModel = contactViewModel, loginViewModel = loginViewModel,
+                    homeViewModel = homeViewModel)
             }
         }
     }

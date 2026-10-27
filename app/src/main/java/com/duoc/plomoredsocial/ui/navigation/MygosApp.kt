@@ -43,12 +43,13 @@ import com.duoc.plomoredsocial.ui.contact.ContactScreen
 import com.duoc.plomoredsocial.ui.activities.ActivitiesScreen
 import com.duoc.plomoredsocial.viewmodel.ContactViewModel
 import com.duoc.plomoredsocial.viewmodel.LoginViewModel
+import com.duoc.plomoredsocial.viewmodel.HomeViewModel
 import com.duoc.plomoredsocial.ui.auth.LoginScreen
 
 // Navigation Compose administra la pila; el ViewModel conserva el formulario de MAIN-003.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel) {
+fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel, homeViewModel: HomeViewModel) {
     val navController = rememberNavController()
     val entry by navController.currentBackStackEntryAsState()
     val destination = MygosDestination.entries.firstOrNull { it.route == entry?.destination?.route }
@@ -168,12 +169,17 @@ fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel)
             MygosDestination.entries.forEach { item ->
                 composable(item.route) {
                     when (item) {
-                        MygosDestination.HOME -> HomeScreen(loginState.user,
+                        MygosDestination.HOME -> HomeScreen(loginState.user, homeViewModel.uiState,
                             onLogin = {
                                 loginViewModel.clearForm()
                                 navController.navigate(MygosDestination.LOGIN.route) { launchSingleTop = true }
                             },
-                            onProfile = { navController.navigate(MygosDestination.PROFILE.route) { launchSingleTop = true } })
+                            onProfile = { navController.navigate(MygosDestination.PROFILE.route) { launchSingleTop = true } },
+                            onRegister = {
+                                // Abre el Registro existente desde Inicio y limpia el formulario de acceso.
+                                loginViewModel.clearForm()
+                                navController.navigate(MygosDestination.REGISTER.route) { launchSingleTop = true }
+                            })
                         MygosDestination.LOGIN -> LoginScreen(
                             state = loginState,
                             onEmailChange = loginViewModel::updateEmail,

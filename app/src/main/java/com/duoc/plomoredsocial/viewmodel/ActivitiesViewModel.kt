@@ -9,10 +9,13 @@ import androidx.lifecycle.viewModelScope
 import com.duoc.plomoredsocial.model.ActivityEntity
 import com.duoc.plomoredsocial.model.ActivityMember
 import com.duoc.plomoredsocial.model.MygosDatabase
+import com.duoc.plomoredsocial.repository.RoomActivityRepository
 import kotlinx.coroutines.launch
 
 class ActivitiesViewModel(application: Application) : AndroidViewModel(application) {
     private val dao = MygosDatabase.getInstance(application).activityDao()
+    // Comparte con Inicio la lectura de actividades e inscritos. El guardado sigue igual.
+    private val repository = RoomActivityRepository(dao)
     var activities by mutableStateOf(emptyList<ActivityEntity>())
         private set
     var members by mutableStateOf(emptyList<ActivityMember>())
@@ -24,11 +27,11 @@ class ActivitiesViewModel(application: Application) : AndroidViewModel(applicati
 
     init {
         viewModelScope.launch {
-            try { dao.observeActivities().collect { activities = it } }
+            try { repository.observeActivities().collect { activities = it } }
             catch (_: Exception) { error = true }
         }
         viewModelScope.launch {
-            try { dao.observeMembers().collect { members = it } }
+            try { repository.observeMembers().collect { members = it } }
             catch (_: Exception) { error = true }
         }
     }

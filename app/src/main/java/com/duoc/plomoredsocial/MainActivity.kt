@@ -15,6 +15,8 @@ import com.duoc.plomoredsocial.ui.navigation.MygosApp
 import com.duoc.plomoredsocial.viewmodel.ContactViewModel
 import com.duoc.plomoredsocial.repository.ContactRepository
 import com.duoc.plomoredsocial.model.MygosDatabase
+import com.duoc.plomoredsocial.repository.TemporaryAuthRepository
+import com.duoc.plomoredsocial.viewmodel.LoginViewModel
 
 // La actividad entrega las dependencias sin trasladar lógica de negocio a las pantallas.
 class MainActivity : ComponentActivity() {
@@ -26,9 +28,12 @@ class MainActivity : ComponentActivity() {
         val contactViewModel = ViewModelProvider(
             this, ContactViewModel.Factory(repository)
         )[ContactViewModel::class.java]
+        val loginViewModel = ViewModelProvider(
+            this, LoginViewModel.Factory(TemporaryAuthRepository(applicationContext.assets))
+        )[LoginViewModel::class.java]
         setContent {
             PlomoRedSocialTheme {
-                MygosApp(contactViewModel = contactViewModel)
+                MygosApp(contactViewModel = contactViewModel, loginViewModel = loginViewModel)
             }
         }
     }

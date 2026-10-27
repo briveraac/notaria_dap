@@ -1,0 +1,10 @@
+[
+  {
+    "id": "demo-001",
+    "name": "Alex",
+    "email": "demo@mygos.cl",
+    "salt": "mygos-demo-2026",
+    "iterations": 120000,
+    "passwordHash": "3887a969cb14ca656054956fe443d47c3b40b77ae5fc400f12f4c69e40133005"
+  }
+]

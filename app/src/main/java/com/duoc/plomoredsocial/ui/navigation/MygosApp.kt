@@ -25,6 +25,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -36,16 +38,35 @@ import androidx.navigation.compose.rememberNavController
 import com.duoc.plomoredsocial.R
 import com.duoc.plomoredsocial.ui.contact.ContactScreen
 import com.duoc.plomoredsocial.viewmodel.ContactViewModel
+import com.duoc.plomoredsocial.viewmodel.LoginViewModel
+import com.duoc.plomoredsocial.ui.auth.LoginScreen
 
 // Navigation Compose administra la pila; el ViewModel conserva el formulario de MAIN-003.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MygosApp(contactViewModel: ContactViewModel) {
+fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel) {
     val navController = rememberNavController()
     val entry by navController.currentBackStackEntryAsState()
     val destination = MygosDestination.entries.firstOrNull { it.route == entry?.destination?.route }
         ?: MygosDestination.HOME
     val showBottomBar = destination in MygosDestination.main
+    val loginState = loginViewModel.uiState
+
+    // No abandonamos una autenticación en curso ni dejamos la contraseña al volver.
+    BackHandler(enabled = destination == MygosDestination.LOGIN) {
+        if (!loginState.loading) {
+            loginViewModel.clearForm()
+            navController.popBackStack()
+        }
+    }
+    LaunchedEffect(loginState.user, destination) {
+        if (loginState.user != null && destination == MygosDestination.LOGIN) {
+            navController.navigate(MygosDestination.HOME.route) {
+                popUpTo(navController.graph.findStartDestination().id) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -56,7 +77,11 @@ fun MygosApp(contactViewModel: ContactViewModel) {
                     title = { Text(stringResource(destination.title)) },
                     navigationIcon = {
                         IconButton(
-                            onClick = { navController.popBackStack() },
+                            onClick = {
+                                if (destination == MygosDestination.LOGIN) loginViewModel.clearForm()
+                                navController.popBackStack()
+                            },
+                            enabled = destination != MygosDestination.LOGIN || !loginState.loading,
                             modifier = Modifier.testTag("navigation_back")
                         ) {
                             Icon(
@@ -71,7 +96,7 @@ fun MygosApp(contactViewModel: ContactViewModel) {
         bottomBar = {
             // La barra solo aparece en las cuatro secciones: queda oculta en acceso y registro.
             if (showBottomBar) {
-                // Superficie blanca y selección lavanda, con las mismas rutas de MAIN-006.
+                // Superficie blanca y selección celeste.
                 Surface(
                     color = MaterialTheme.colorScheme.surface,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
@@ -129,11 +154,29 @@ fun MygosApp(contactViewModel: ContactViewModel) {
         ) {
             MygosDestination.entries.forEach { item ->
                 composable(item.route) {
-                    if (item == MygosDestination.CONTACT) {
-                        // Reutiliza íntegramente la pantalla, validaciones, modal y guardado existentes.
-                        ContactScreen(viewModel = contactViewModel)
-                    } else {
-                        TemporaryScreen(item) { next ->
+                    when (item) {
+                        MygosDestination.HOME -> HomeScreen(loginState.user,
+                            onLogin = {
+                                loginViewModel.clearForm()
+                                navController.navigate(MygosDestination.LOGIN.route) { launchSingleTop = true }
+                            },
+                            onProfile = { navController.navigate(MygosDestination.PROFILE.route) { launchSingleTop = true } })
+                        MygosDestination.LOGIN -> LoginScreen(
+                            state = loginState,
+                            onEmailChange = loginViewModel::updateEmail,
+                            onPasswordChange = loginViewModel::updatePassword,
+                            onLogin = loginViewModel::login,
+                            onRegister = {
+                                loginViewModel.clearForm()
+                                navController.navigate(MygosDestination.REGISTER.route) { launchSingleTop = true }
+                            }
+                        )
+                        MygosDestination.CONTACT -> {
+                            ContactScreen(viewModel = contactViewModel)
+                        }
+                        else -> TemporaryScreen(item, user = loginState.user,
+                            onLogout = loginViewModel::logout) { next ->
+                            if (next == MygosDestination.LOGIN) loginViewModel.clearForm()
                             navController.navigate(next.route) { launchSingleTop = true }
                         }
                     }

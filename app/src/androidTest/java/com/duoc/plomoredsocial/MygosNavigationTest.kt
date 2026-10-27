@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.espresso.Espresso.pressBack
 import org.junit.Rule
 import org.junit.Test
@@ -44,15 +45,15 @@ class MygosNavigationTest {
     @Test
     fun loginAndRegistrationHideTheBarAndReturnToProfile() {
         compose.onNodeWithTag("nav_perfil").performClick()
-        compose.onNodeWithText("Iniciar sesión").performClick()
+        compose.onNodeWithText("Iniciar sesión").performScrollTo().performClick()
         compose.onNodeWithTag("bottom_navigation").assertDoesNotExist()
-        compose.onNodeWithText("Crear cuenta").performClick()
+        compose.onNodeWithText("Crear cuenta").performScrollTo().performClick()
         compose.onNodeWithTag("bottom_navigation").assertDoesNotExist()
         compose.onNodeWithTag("navigation_back").performClick()
         compose.onNodeWithTag("bottom_navigation").assertDoesNotExist()
         pressBack()
         compose.onNodeWithTag("nav_perfil").assertIsSelected()
-        compose.onNodeWithText("Crear cuenta").performClick()
+        compose.onNodeWithText("Crear cuenta").performScrollTo().performClick()
         compose.onNodeWithTag("bottom_navigation").assertDoesNotExist()
         compose.onNodeWithTag("navigation_back").performClick()
         compose.onNodeWithTag("nav_perfil").assertIsSelected()

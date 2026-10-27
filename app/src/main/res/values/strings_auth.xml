@@ -1,0 +1,25 @@
+<resources>
+    <string name="login_welcome">Qué bueno verte</string>
+    <string name="login_subtitle">Entra a tu cuenta y vuelve a conectar.</string>
+    <string name="login_email">Correo electrónico</string>
+    <string name="login_password">Contraseña</string>
+    <string name="login_show_password">Mostrar contraseña</string>
+    <string name="login_hide_password">Ocultar contraseña</string>
+    <string name="login_submit">Entrar a mi cuenta</string>
+    <string name="login_loading">Iniciando sesión…</string>
+    <string name="login_email_required">Ingresa tu correo electrónico.</string>
+    <string name="login_email_format">Ingresa un correo válido.</string>
+    <string name="login_password_required">Ingresa tu contraseña.</string>
+    <string name="login_invalid">El correo o la contraseña no son correctos.</string>
+    <string name="login_unavailable">No pudimos iniciar sesión. Inténtalo nuevamente.</string>
+    <string name="login_no_account">¿Aún no tienes cuenta?</string>
+    <string name="home_eyebrow">TU PRÓXIMO ENCUENTRO EMPIEZA AQUÍ</string>
+    <string name="home_title">Conecta. Comparte.\nHaz nuevos planes.</string>
+    <string name="home_subtitle">Encuentra tu lugar entre personas que comparten tus intereses.</string>
+    <string name="home_login_description">Un solo paso para volver a tu comunidad.</string>
+    <string name="home_greeting">Hola, %1$s</string>
+    <string name="home_session_description">Ya estás dentro. Qué bueno tenerte en Mygos.</string>
+    <string name="home_profile">Ir a mi perfil</string>
+    <string name="session_account">Tu cuenta</string>
+    <string name="session_logout">Cerrar sesión</string>
+</resources>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="activities_intro">Encuentra panoramas en tu comuna y revisa el punto de encuentro.</string>
+    <string name="activities_local">Versión local: las actividades e inscripciones se guardan solo en este teléfono. Aún no se comparten con otros usuarios.</string>
+    <string name="activities_login">Inicia sesión desde tu perfil para crear una actividad o unirte.</string>
+    <string name="activities_create">Crear actividad</string>
+    <string name="activities_filter">Buscar por comuna</string>
+    <string name="activities_map_unconfigured">El mapa aún no está disponible. Podrás elegir el punto de encuentro cuando se habilite el servicio.</string>
+    <string name="activities_empty">No hay actividades para mostrar. ¡Crea el primer panorama de tu comuna!</string>
+    <string name="activities_error">No pudimos leer o guardar los cambios. Intenta nuevamente.</string>
+    <string name="activities_maps_error">No se pudo abrir Google Maps. Verifica que tengas un navegador instalado.</string>
+    <string name="activities_attendees">Personas inscritas: %1$d</string>
+    <string name="activities_directions">Cómo llegar con Google Maps</string>
+    <string name="activities_organizer">Tú organizas esta actividad</string>
+    <string name="activities_join">Unirme a la actividad</string>
+    <string name="activities_leave">Salir de la actividad</string>
+    <string name="activities_title">Nombre de la actividad</string>
+    <string name="activities_commune">Comuna</string>
+    <string name="activities_schedule">Fecha y hora (ej. 30/10/2026, 18:00)</string>
+    <string name="activities_place">Dirección o referencia del encuentro</string>
+    <string name="activities_pick_hint">Mueve el mapa hasta tu sector y toca el punto exacto de encuentro.</string>
+    <string name="activities_coordinates">Punto seleccionado: %1$s</string>
+    <string name="activities_pick">Elegir punto en el mapa</string>
+    <string name="activities_point">Punto de encuentro</string>
+    <string name="activities_confirm_point">Usar este punto</string>
+    <string name="activities_save">Guardar actividad</string>
+    <string name="activities_saving">Guardando…</string>
+    <string name="activities_cancel">Cancelar</string>
+</resources>

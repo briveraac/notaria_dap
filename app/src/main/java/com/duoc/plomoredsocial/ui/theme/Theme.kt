@@ -19,13 +19,13 @@ private val DarkColorScheme = darkColorScheme(
 
 // El esquema claro conserva la identidad de Mygos en todas las pantallas.
 private val LightColorScheme = lightColorScheme(
-    primary = MygosBlue, onPrimary = Color.White,
-    primaryContainer = MygosSky, onPrimaryContainer = MygosText,
-    secondary = MygosSecondaryText, secondaryContainer = MygosSky,
-    onSecondaryContainer = MygosBlue,
+    primary = MygosPurple, onPrimary = Color.White,
+    primaryContainer = MygosLavender, onPrimaryContainer = MygosText,
+    secondary = MygosSecondaryText, secondaryContainer = MygosLavender,
+    onSecondaryContainer = MygosPurple,
     background = MygosBackground, onBackground = MygosText,
     surface = Color.White, onSurface = MygosText,
-    surfaceVariant = MygosSky, onSurfaceVariant = MygosSecondaryText,
+    surfaceVariant = MygosLavender, onSurfaceVariant = MygosSecondaryText,
     surfaceContainer = MygosBackground, surfaceContainerLow = Color.White,
     surfaceContainerHigh = MygosBackground,
     outline = MygosSecondaryText, outlineVariant = MygosOutline,

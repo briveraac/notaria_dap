@@ -96,7 +96,7 @@ fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel)
         bottomBar = {
             // La barra solo aparece en las cuatro secciones: queda oculta en acceso y registro.
             if (showBottomBar) {
-                // Superficie blanca y selección celeste.
+                // Superficie blanca y selección lavanda.
                 Surface(
                     color = MaterialTheme.colorScheme.surface,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)

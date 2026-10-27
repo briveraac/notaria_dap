@@ -22,4 +22,6 @@
     <string name="home_profile">Ir a mi perfil</string>
     <string name="session_account">Tu cuenta</string>
     <string name="session_logout">Cerrar sesión</string>
+    <string name="session_logging_out">Cerrando sesión…</string>
+    <string name="session_logout_error">No pudimos cerrar tu sesión. Inténtalo nuevamente.</string>
 </resources>

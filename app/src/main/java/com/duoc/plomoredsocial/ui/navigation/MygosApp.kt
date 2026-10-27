@@ -4,6 +4,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.Alignment
 import androidx.compose.material3.Surface
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.TopAppBarDefaults
@@ -66,6 +69,15 @@ fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel)
                 launchSingleTop = true
             }
         }
+    }
+
+    if (loginState.restoringSession) {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            Box(contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        return
     }
 
     Scaffold(
@@ -175,6 +187,8 @@ fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel)
                             ContactScreen(viewModel = contactViewModel)
                         }
                         else -> TemporaryScreen(item, user = loginState.user,
+                            logoutLoading = loginState.loading,
+                            logoutFailed = loginState.logoutFailed,
                             onLogout = loginViewModel::logout) { next ->
                             if (next == MygosDestination.LOGIN) loginViewModel.clearForm()
                             navController.navigate(next.route) { launchSingleTop = true }

@@ -11,11 +11,22 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.test.espresso.Espresso.pressBack
 import org.junit.Rule
 import org.junit.Test
+import org.junit.Before
+import androidx.compose.ui.test.onAllNodesWithTag
 
 // Prueba las rutas reales de MAIN-006 sin sustituir Room ni guardar consultas de prueba.
 class MygosNavigationTest {
-    @get:Rule
+    @get:Rule(order = 0)
+    val session = IsolatedSessionRule()
+
+    @get:Rule(order = 1)
     val compose = createAndroidComposeRule<MainActivity>()
+
+    @Before fun waitForSessionRestoration() {
+        compose.waitUntil(10000) {
+            compose.onAllNodesWithTag("bottom_navigation").fetchSemanticsNodes().isNotEmpty()
+        }
+    }
 
     @Test
     fun bottomSectionsSelectAndRepeatedTapsDoNotDuplicateTheRoute() {

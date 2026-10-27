@@ -8,9 +8,17 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
+import org.junit.Before
 
 class LoginTest {
-    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+    @get:Rule(order = 0) val session = IsolatedSessionRule()
+    @get:Rule(order = 1) val compose = createAndroidComposeRule<MainActivity>()
+
+    @Before fun waitForSessionRestoration() {
+        compose.waitUntil(10000) {
+            compose.onAllNodesWithTag("bottom_navigation").fetchSemanticsNodes().isNotEmpty()
+        }
+    }
 
     @Test fun temporaryCredentialsAuthenticateAndRejectWrongPasswords() = runBlocking {
         val assets = InstrumentationRegistry.getInstrumentation().targetContext.assets
@@ -42,6 +50,9 @@ class LoginTest {
         compose.onNodeWithTag("nav_perfil").performClick()
         compose.onNodeWithText("demo@mygos.cl").assertExists()
         compose.onNodeWithText("Cerrar sesión").performScrollTo().performClick()
+        compose.waitUntil(10000) {
+            compose.onAllNodesWithText("Iniciar sesión").fetchSemanticsNodes().isNotEmpty()
+        }
         compose.onNodeWithText("Iniciar sesión").assertExists()
         compose.onNodeWithTag("nav_inicio").performClick()
         compose.onNodeWithText("Iniciar sesión").assertExists()

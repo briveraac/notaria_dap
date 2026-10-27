@@ -23,6 +23,8 @@ import com.duoc.plomoredsocial.model.AuthUser
 internal fun TemporaryScreen(
     destination: MygosDestination,
     user: AuthUser? = null,
+    logoutLoading: Boolean = false,
+    logoutFailed: Boolean = false,
     onLogout: () -> Unit = {},
     onNavigate: (MygosDestination) -> Unit
 ) {
@@ -102,8 +104,10 @@ internal fun TemporaryScreen(
                     Text(stringResource(R.string.session_account), style = MaterialTheme.typography.titleMedium)
                     Text(user.name, style = MaterialTheme.typography.titleLarge)
                     Text(user.email, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    OutlinedButton(onClick = onLogout, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                        Text(stringResource(R.string.session_logout))
+                    if (logoutFailed) MygosNotice(stringResource(R.string.session_logout_error), isError = true)
+                    OutlinedButton(onClick = onLogout, enabled = !logoutLoading,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                        Text(stringResource(if (logoutLoading) R.string.session_logging_out else R.string.session_logout))
                     }
                 }
             } else {

@@ -12,6 +12,19 @@ import javax.crypto.spec.PBEKeySpec
 // Datos de demostración empaquetados en assets/temporary_auth/users.json.
 // La autenticación local es temporal: no constituye una frontera de seguridad.
 class TemporaryAuthRepository(private val assets: AssetManager) : AuthRepository {
+    override suspend fun getUserById(id: String): AuthUser? = withContext(Dispatchers.IO) {
+        val users = assets.open("temporary_auth/users.json").bufferedReader().use {
+            JSONArray(it.readText())
+        }
+        for (index in 0 until users.length()) {
+            val record = users.getJSONObject(index)
+            if (record.getString("id") == id) {
+                return@withContext AuthUser(id, record.getString("name"), record.getString("email"))
+            }
+        }
+        null
+    }
+
     override suspend fun authenticate(email: String, password: String): AuthUser? =
         withContext(Dispatchers.IO) {
             val users = assets.open("temporary_auth/users.json").bufferedReader().use {

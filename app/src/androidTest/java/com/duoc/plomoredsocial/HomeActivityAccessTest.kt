@@ -10,18 +10,20 @@ import org.junit.Test
 // Comprueba qué ocurre al consultar una actividad con y sin una sesión iniciada.
 class HomeActivityAccessTest {
     @get:Rule(order = 0) val session = IsolatedSessionRule()
-    @get:Rule(order = 1) val compose = createAndroidComposeRule<MainActivity>()
+    @get:Rule(order = 1) val activities = HomeActivitiesRule()
+    @get:Rule(order = 2) val compose = createAndroidComposeRule<MainActivity>()
 
     @Before fun waitForHome() {
         compose.waitUntil(10000) {
-            compose.onAllNodesWithTag("home_feed").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithTag("home_feed").fetchSemanticsNodes().isNotEmpty() &&
+                compose.onAllNodesWithTag("home_loading").fetchSemanticsNodes().isEmpty()
         }
     }
 
     // Busca la tarjeta en el listado y pulsa su botón de consulta.
     private fun viewActivity(id: String) {
-        compose.onNodeWithTag("home_feed").performScrollToNode(hasTestTag("view_activity_$id"))
-        compose.onNodeWithTag("view_activity_$id").performClick()
+        compose.onNodeWithTag("home_feed").performScrollToNode(hasTestTag("view_activity_${activities.id(id)}"))
+        compose.onNodeWithTag("view_activity_${activities.id(id)}").performClick()
     }
 
     private fun dialogText(text: String) =
@@ -51,8 +53,8 @@ class HomeActivityAccessTest {
         compose.onNodeWithTag("home_access_dialog").assertDoesNotExist()
     }
 
-    // Con una cuenta de demostración, comprueba la consulta de los tres estados y sus cupos.
-    @Test fun authenticatedUserCanReadOpenInProgressAndCompleteActivities() {
+    // Con sesión, consulta la misma actividad guardada que aparece en la sección Actividades.
+    @Test fun authenticatedUserCanReadStoredActivitiesInBothSections() {
         viewActivity("park")
         dialogText("Iniciar sesión").performClick()
         compose.onNodeWithTag("login_email").performScrollTo().performTextInput("demo@mygos.cl")
@@ -61,18 +63,17 @@ class HomeActivityAccessTest {
         compose.waitUntil(10000) {
             compose.onAllNodesWithText("Hola, Alex").fetchSemanticsNodes().isNotEmpty()
         }
-        listOf(
-            Triple("park", "Abierta", "1/5 participantes"),
-            Triple("volley", "En progreso", "6/10 participantes"),
-            Triple("games", "Completa", "10/10 participantes")
-        ).forEach { (id, status, count) ->
+        listOf("park", "volley", "games").forEach { id ->
             viewActivity(id)
             compose.onNodeWithTag("home_activity_dialog").assertIsDisplayed()
             compose.onNodeWithTag("home_access_dialog").assertDoesNotExist()
-            compose.onNode(hasText(status) and hasAnyAncestor(hasTestTag("home_activity_dialog"))).assertIsDisplayed()
-            compose.onNode(hasText(count) and hasAnyAncestor(hasTestTag("home_activity_dialog"))).assertIsDisplayed()
+            compose.onNode(hasText("Prueba MAIN-004 $id") and hasAnyAncestor(hasTestTag("home_activity_dialog"))).assertIsDisplayed()
+            compose.onNode(hasText("Entrada de la plaza") and hasAnyAncestor(hasTestTag("home_activity_dialog"))).assertIsDisplayed()
+            compose.onNode(hasText("Personas inscritas: 0") and hasAnyAncestor(hasTestTag("home_activity_dialog"))).assertIsDisplayed()
             compose.onNodeWithText("Cerrar").performClick()
             compose.onNodeWithTag("home_activity_dialog").assertDoesNotExist()
         }
+        compose.onNodeWithTag("nav_actividades").performClick()
+        compose.onNodeWithText("Prueba MAIN-004 park").performScrollTo().assertIsDisplayed()
     }
 }

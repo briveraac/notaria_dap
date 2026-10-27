@@ -14,7 +14,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -67,12 +66,9 @@ internal fun HomeScreen(
                 title = { Text(selectedActivity.title) },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Icon(categoryIcon(selectedActivity.category), null,
+                        Icon(Icons.Filled.Place, null,
                             tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(40.dp))
-                        Text(stringResource(categoryLabel(selectedActivity.category)))
-                        Text(selectedActivity.description)
-                        ActivityAvailability(selectedActivity)
-                        Text(stringResource(R.string.home_demo_detail))
+                        ActivityInformation(selectedActivity, state.participantCounts[selectedActivity.id] ?: 0)
                     }
                 },
                 confirmButton = {
@@ -131,38 +127,35 @@ internal fun HomeScreen(
             // Informa si las actividades están cargando, hubo un problema o no hay datos.
             when {
                 state.loading -> item(key = "loading") {
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                    Box(Modifier.fillMaxWidth().testTag("home_loading"), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                 }
                 state.failed -> item(key = "error") { MygosNotice(stringResource(R.string.home_feed_error), isError = true) }
                 state.activities.isEmpty() -> item(key = "empty") { MygosNotice(stringResource(R.string.home_feed_empty)) }
             }
             // Crea una tarjeta por actividad y registra cuál se eligió al pulsar el botón.
             items(state.activities, key = { it.id }, contentType = { "activity" }) { activity ->
-                ActivityCard(activity, onView = { selectedId = activity.id })
+                ActivityCard(activity, state.participantCounts[activity.id] ?: 0,
+                    onView = { selectedId = activity.id })
             }
         }
     }
 }
 
-// Resumen de una actividad: imagen, categoría, descripción, estado, cupos y botón de consulta.
+// Resumen de una actividad guardada: punto de encuentro, datos disponibles y botón de consulta.
 @Composable
-private fun ActivityCard(activity: HomeActivity, onView: () -> Unit) {
+private fun ActivityCard(activity: ActivityEntity, participants: Int, onView: () -> Unit) {
     MygosCard {
         // Usa un icono incluido en la app; no necesita descargar imágenes de Internet.
         Surface(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium,
             color = MaterialTheme.colorScheme.primaryContainer) {
             Box(Modifier.height(112.dp), contentAlignment = Alignment.Center) {
-                Icon(categoryIcon(activity.category), contentDescription = null,
+                Icon(Icons.Filled.Place, contentDescription = null,
                     modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
             }
         }
-        Text(stringResource(categoryLabel(activity.category)), style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary)
         Text(activity.title, style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.testTag("activity_${activity.id}"))
-        Text(activity.description, style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
-        ActivityAvailability(activity)
+        ActivityInformation(activity, participants)
         OutlinedButton(onClick = onView,
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("view_activity_${activity.id}")) {
             Text(stringResource(R.string.home_view_activity))
@@ -170,37 +163,15 @@ private fun ActivityCard(activity: HomeActivity, onView: () -> Unit) {
     }
 }
 
-// Comparte el mismo estado y contador entre la tarjeta y la ventana de información.
+// Comparte los datos reales entre la tarjeta y su ventana de información.
+// No supone un estado ni una capacidad: el módulo Actividades todavía no los guarda.
 @Composable
-private fun ActivityAvailability(activity: HomeActivity) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(stringResource(when (activity.status) {
-            ActivityStatus.OPEN -> R.string.home_status_open
-            ActivityStatus.IN_PROGRESS -> R.string.home_status_in_progress
-            ActivityStatus.COMPLETE -> R.string.home_status_complete
-        }), modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary)
-        Text(stringResource(R.string.home_participants, activity.participants, activity.capacity),
-            style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-// Convierte cada categoría en el nombre que verá la persona.
-private fun categoryLabel(category: InterestCategory): Int = when (category) {
-    InterestCategory.OUTDOORS -> R.string.interest_outdoors
-    InterestCategory.SPORTS -> R.string.interest_sports
-    InterestCategory.CULTURE -> R.string.interest_culture
-    InterestCategory.GAMES -> R.string.interest_games
-    InterestCategory.TECHNOLOGY -> R.string.interest_technology
-    InterestCategory.COMMUNITY -> R.string.interest_community
-}
-
-// Asigna un icono a cada categoría para reconocerla más fácilmente.
-private fun categoryIcon(category: InterestCategory): ImageVector = when (category) {
-    InterestCategory.OUTDOORS -> Icons.Filled.Place
-    InterestCategory.SPORTS -> Icons.Filled.Star
-    InterestCategory.CULTURE -> Icons.Filled.Create
-    InterestCategory.GAMES -> Icons.Filled.Face
-    InterestCategory.TECHNOLOGY -> Icons.Filled.Build
-    InterestCategory.COMMUNITY -> Icons.Filled.Favorite
+private fun ActivityInformation(activity: ActivityEntity, participants: Int) {
+    Text(activity.commune, style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary)
+    Text(activity.schedule, style = MaterialTheme.typography.bodyMedium)
+    Text(activity.meetingPoint, style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Text(stringResource(R.string.activities_attendees, participants),
+        style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }

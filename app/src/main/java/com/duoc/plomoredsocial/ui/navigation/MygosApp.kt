@@ -40,6 +40,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.duoc.plomoredsocial.R
 import com.duoc.plomoredsocial.ui.contact.ContactScreen
+import com.duoc.plomoredsocial.ui.activities.ActivitiesScreen
 import com.duoc.plomoredsocial.viewmodel.ContactViewModel
 import com.duoc.plomoredsocial.viewmodel.LoginViewModel
 import com.duoc.plomoredsocial.viewmodel.HomeViewModel
@@ -192,6 +193,7 @@ fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel,
                         MygosDestination.CONTACT -> {
                             ContactScreen(viewModel = contactViewModel)
                         }
+                        MygosDestination.ACTIVITIES -> ActivitiesScreen(user = loginState.user)
                         else -> TemporaryScreen(item, user = loginState.user,
                             logoutLoading = loginState.loading,
                             logoutFailed = loginState.logoutFailed,

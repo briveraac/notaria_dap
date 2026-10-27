@@ -1,6 +1,36 @@
 # notaria_dap
 Trabajo Desarrollo app movil.
 
+## Actividades y Google Maps
+
+En **Actividades** se puede filtrar por comuna, crear un panorama con nombre,
+fecha/hora y referencia, elegir el punto exacto tocando el mapa, inscribirse o
+salir y abrir las indicaciones de Google Maps. Para crear o inscribirse hay que
+iniciar sesión. El mapa comienza en Santiago y permite desplazarse a otro sector.
+
+Las actividades e inscripciones se guardan en Room en este dispositivo; todavía
+no hay un servidor que las publique o sincronice entre teléfonos. La comuna se
+ingresa manualmente y el filtro busca ese texto; no calcula cercanía por GPS.
+La actualización de la base de datos de versión 1 a 2 conserva los contactos.
+
+Para habilitar el mapa integrado:
+
+1. Crear un proyecto de Google Cloud con facturación habilitada y activar
+   **Maps SDK for Android**.
+2. Crear una clave restringida a aplicaciones Android, al paquete
+   `com.duoc.plomoredsocial` y al SHA-1 del certificado de firma (se obtiene con
+   `.\gradlew.bat :app:signingReport`). Restringir también la API al Maps SDK for Android.
+3. Agregar `MAPS_API_KEY=tu_clave` a `local.properties` (excluido de Git), o definir
+   la variable de entorno `MAPS_API_KEY`, que tiene prioridad. Volver a compilar.
+
+Sin clave, la pantalla muestra un aviso y deshabilita la elección del punto;
+no intenta iniciar un mapa sin configurar. No se solicitan permisos de ubicación.
+La clave de una app Android se incluye en el APK: las restricciones de Google
+Cloud son necesarias aunque no esté en el repositorio.
+
+Referencias: [configurar Maps SDK](https://developers.google.com/maps/documentation/android-sdk/get-api-key)
+y [Maps Compose](https://github.com/googlemaps/android-maps-compose).
+
 ## Login temporal
 
 Desde **Inicio → Iniciar sesión**, usar:

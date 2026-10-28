@@ -19,7 +19,7 @@ class TemporaryAuthRepository(private val assets: AssetManager) : AuthRepository
         for (index in 0 until users.length()) {
             val record = users.getJSONObject(index)
             if (record.getString("id") == id) {
-                return@withContext AuthUser(id, record.getString("name"), record.getString("email"))
+                return@withContext AuthUser(id, record.getString("name"), record.getString("email"), isDemo = true)
             }
         }
         null
@@ -45,7 +45,7 @@ class TemporaryAuthRepository(private val assets: AssetManager) : AuthRepository
                 val expected = record.getString("passwordHash").chunked(2)
                     .map { it.toInt(16).toByte() }.toByteArray()
                 return@withContext if (MessageDigest.isEqual(actual, expected)) {
-                    AuthUser(record.getString("id"), record.getString("name"), record.getString("email"))
+                    AuthUser(record.getString("id"), record.getString("name"), record.getString("email"), isDemo = true)
                 } else null
             }
             null

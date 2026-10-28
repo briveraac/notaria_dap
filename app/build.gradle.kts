@@ -54,6 +54,8 @@ ksp {
 }
 
 dependencies {
+    // PBKDF2-SHA256 compatible con API 24/25, sin servicios externos.
+    implementation("org.bouncycastle:bcprov-jdk18on:1.86")
     implementation("com.google.maps.android:maps-compose:6.12.0")
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.material.icons.core)

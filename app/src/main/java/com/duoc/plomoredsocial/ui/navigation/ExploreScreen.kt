@@ -66,7 +66,7 @@ internal fun ExploreScreen(
             modifier = Modifier.testTag("home_access_dialog"),
             onDismissRequest = { accessRequested = false },
             title = { Text("Participa en Mygos") },
-            text = { Text("Inicia sesión para crear una actividad o participar. También puedes conocer el registro de demostración.") },
+            text = { Text("Inicia sesión para crear una actividad o participar. También puedes crear una cuenta local.") },
             confirmButton = {
                 TextButton(onClick = { accessRequested = false; onLogin() }) { Text("Iniciar sesión") }
             },

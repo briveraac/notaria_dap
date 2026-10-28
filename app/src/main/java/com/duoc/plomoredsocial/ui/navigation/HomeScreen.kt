@@ -48,6 +48,6 @@ internal fun HomeScreen(user: AuthUser?, onLogin: () -> Unit,
             Text("2. Conoce el lugar\nAbre el detalle de una actividad para consultar el mapa y las indicaciones.")
             Text("3. Participa\nInicia sesión para crear actividades desde Explorar o inscribirte y retirarte desde su detalle.")
         }
-        MygosNotice("Las actividades y las inscripciones se guardan en este dispositivo. El acceso y el registro son de demostración.")
+        MygosNotice("Las cuentas, las actividades y las inscripciones se guardan solo en este dispositivo. También puedes usar la cuenta de demostración.")
     }
 }

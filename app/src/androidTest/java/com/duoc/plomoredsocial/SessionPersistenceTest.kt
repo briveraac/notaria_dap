@@ -6,7 +6,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.duoc.plomoredsocial.model.LoginError
 import com.duoc.plomoredsocial.repository.LocalSessionStore
 import com.duoc.plomoredsocial.repository.SessionStore
-import com.duoc.plomoredsocial.repository.TemporaryAuthRepository
+import com.duoc.plomoredsocial.repository.RoomAuthRepository
+import com.duoc.plomoredsocial.model.MygosDatabase
 import com.duoc.plomoredsocial.viewmodel.LoginViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -21,6 +22,37 @@ class SessionPersistenceTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = instrumentation.targetContext
 
+    @Test fun registeredLocalAccountRestoresInFreshViewModelsAndLogoutPersists() {
+        val directory = File(context.cacheDir, "local-session-test-${UUID.randomUUID()}")
+        directory.mkdirs()
+        val database = MygosDatabase.getInstance(context)
+        val email = "local-session-${UUID.randomUUID()}@example.com"
+        val user = runBlocking {
+            RoomAuthRepository(database, context.assets).register("Vecina local", email, "Una contraseña local larga")
+        }
+        val instances = mutableListOf<SessionInstance>()
+        try {
+            runBlocking { LocalSessionStore(directory).saveUserId(user.id) }
+            val first = open(LocalSessionStore(directory)).also { instances.add(it) }
+            assertEquals(user.id, first.viewModel.uiState.user?.id)
+            assertEquals(email, first.viewModel.uiState.user?.email)
+            assertEquals(false, first.viewModel.uiState.user?.isDemo)
+            close(first)
+            val fresh = open(LocalSessionStore(directory)).also { instances.add(it) }
+            assertEquals(user.id, fresh.viewModel.uiState.user?.id)
+            instrumentation.runOnMainSync { fresh.viewModel.logout() }
+            await { !fresh.viewModel.uiState.loading }
+            close(fresh)
+            val loggedOut = open(LocalSessionStore(directory)).also { instances.add(it) }
+            assertNull(loggedOut.viewModel.uiState.user)
+            assertNull(runBlocking { LocalSessionStore(directory).readUserId() })
+        } finally {
+            instances.forEach { close(it) }
+            directory.deleteRecursively()
+            database.openHelper.writableDatabase.execSQL("DELETE FROM users WHERE id = ?", arrayOf(user.id))
+        }
+    }
+
     private class SessionInstance(val owner: ViewModelStore, val viewModel: LoginViewModel)
 
     private fun open(store: SessionStore): SessionInstance {
@@ -28,7 +60,7 @@ class SessionPersistenceTest {
         instrumentation.runOnMainSync {
             val owner = ViewModelStore()
             val vm = ViewModelProvider(owner, LoginViewModel.Factory(
-                TemporaryAuthRepository(context.assets), store
+                RoomAuthRepository(MygosDatabase.getInstance(context), context.assets), store
             ))[LoginViewModel::class.java]
             instance = SessionInstance(owner, vm)
         }

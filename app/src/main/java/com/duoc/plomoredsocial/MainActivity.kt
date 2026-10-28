@@ -15,7 +15,8 @@ import com.duoc.plomoredsocial.ui.navigation.MygosApp
 import com.duoc.plomoredsocial.viewmodel.ContactViewModel
 import com.duoc.plomoredsocial.repository.ContactRepository
 import com.duoc.plomoredsocial.model.MygosDatabase
-import com.duoc.plomoredsocial.repository.TemporaryAuthRepository
+import com.duoc.plomoredsocial.repository.RoomAuthRepository
+import com.duoc.plomoredsocial.viewmodel.RegisterViewModel
 import com.duoc.plomoredsocial.repository.LocalSessionStore
 import com.duoc.plomoredsocial.viewmodel.LoginViewModel
 import com.duoc.plomoredsocial.viewmodel.HomeViewModel
@@ -31,9 +32,11 @@ class MainActivity : ComponentActivity() {
         val contactViewModel = ViewModelProvider(
             this, ContactViewModel.Factory(repository)
         )[ContactViewModel::class.java]
+        val authRepository = RoomAuthRepository(MygosDatabase.getInstance(applicationContext), applicationContext.assets)
+        val registerViewModel = ViewModelProvider(this, RegisterViewModel.Factory(authRepository))[RegisterViewModel::class.java]
         val loginViewModel = ViewModelProvider(
             this, LoginViewModel.Factory(
-                TemporaryAuthRepository(applicationContext.assets),
+                authRepository,
                 LocalSessionStore(applicationContext.noBackupFilesDir)
             )
         )[LoginViewModel::class.java]
@@ -45,7 +48,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             PlomoRedSocialTheme {
                 MygosApp(contactViewModel = contactViewModel, loginViewModel = loginViewModel,
-                    homeViewModel = homeViewModel)
+                    homeViewModel = homeViewModel, registerViewModel = registerViewModel)
             }
         }
     }

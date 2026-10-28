@@ -10,12 +10,21 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.duoc.plomoredsocial.model.ContactDao
 import com.duoc.plomoredsocial.model.ContactEntity
 
-@Database(entities = [ContactEntity::class, ActivityEntity::class, ActivityMember::class], version = 3, exportSchema = true)
+@Database(entities = [ContactEntity::class, ActivityEntity::class, ActivityMember::class, UserEntity::class], version = 4, exportSchema = true)
 abstract class MygosDatabase : RoomDatabase() {
     abstract fun contactDao(): ContactDao
     abstract fun activityDao(): ActivityDao
+    abstract fun userDao(): UserDao
 
     companion object {
+        // Solo añade usuarios: conserva intactas actividades, inscritos y contactos.
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS users (id TEXT NOT NULL PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, normalizedEmail TEXT NOT NULL, passwordHash TEXT NOT NULL, salt TEXT NOT NULL, algorithm TEXT NOT NULL, iterations INTEGER NOT NULL, keyLength INTEGER NOT NULL, formatVersion INTEGER NOT NULL, isDemo INTEGER NOT NULL)")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_users_normalizedEmail ON users(normalizedEmail)")
+            }
+        }
+
         // Conserva IDs y coordenadas reales; la descripción anterior queda vacía.
         // Reconstruimos solo activities para permitir coordenadas ausentes, siempre como pareja.
         val MIGRATION_2_3 = object : Migration(2, 3) {
@@ -44,7 +53,7 @@ abstract class MygosDatabase : RoomDatabase() {
                     context.applicationContext,
                     MygosDatabase::class.java,
                     "mygos.db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build().also { instance = it }
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build().also { instance = it }
             }
     }
 }

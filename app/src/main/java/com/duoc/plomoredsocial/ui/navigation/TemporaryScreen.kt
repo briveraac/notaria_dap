@@ -87,7 +87,8 @@ internal fun TemporaryScreen(
             // La cuenta aparece primero; sus datos vienen del estado de sesión.
             if (user != null) {
                 MygosCard {
-                    MygosNotice("Sesión de demostración: estos datos corresponden a la cuenta de prueba.")
+                    if (user.isDemo) MygosNotice("Sesión de demostración: estos datos corresponden a la cuenta de prueba.")
+                    else MygosNotice("Cuenta local: tus datos se guardan en este dispositivo.")
                     Text(stringResource(R.string.session_account), style = MaterialTheme.typography.titleMedium)
                     Text(user.name, style = MaterialTheme.typography.titleLarge)
                     Text(user.email, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -100,7 +101,7 @@ internal fun TemporaryScreen(
             } else {
             MygosCard {
                 Text("¡Bienvenido a Mygos!", style = MaterialTheme.typography.titleLarge)
-                Text("Inicia sesión o explora la demostración de registro para conocer Mygos.")
+                Text("Inicia sesión o crea una cuenta local para participar en Mygos.")
                 Text(
                     stringResource(R.string.nav_account),
                     style = MaterialTheme.typography.titleMedium

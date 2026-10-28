@@ -48,7 +48,8 @@ import com.duoc.plomoredsocial.ui.auth.LoginScreen
 // Navigation Compose administra la pila; el ViewModel conserva el formulario de MAIN-003.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel, homeViewModel: HomeViewModel) {
+fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel, homeViewModel: HomeViewModel,
+    registerViewModel: com.duoc.plomoredsocial.viewmodel.RegisterViewModel) {
     val navController = rememberNavController()
     val entry by navController.currentBackStackEntryAsState()
     val destination = MygosDestination.entries.firstOrNull { it.route == entry?.destination?.route }
@@ -60,6 +61,13 @@ fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel,
     BackHandler(enabled = destination == MygosDestination.ACTIVITIES) {
         if (!navController.popBackStack(MygosDestination.SEARCH.route, false)) {
             navController.navigate(MygosDestination.SEARCH.route) { launchSingleTop = true }
+        }
+    }
+
+    BackHandler(enabled = destination == MygosDestination.REGISTER) {
+        if (!registerViewModel.loading) {
+            registerViewModel.clearForm()
+            navController.popBackStack()
         }
     }
 
@@ -99,13 +107,15 @@ fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel,
                         IconButton(
                             onClick = {
                                 if (destination == MygosDestination.LOGIN) loginViewModel.clearForm()
+                                if (destination == MygosDestination.REGISTER) registerViewModel.clearForm()
                                 if (destination == MygosDestination.ACTIVITIES) {
                                     if (!navController.popBackStack(MygosDestination.SEARCH.route, false)) {
                                         navController.navigate(MygosDestination.SEARCH.route) { launchSingleTop = true }
                                     }
                                 } else navController.popBackStack()
                             },
-                            enabled = destination != MygosDestination.LOGIN || !loginState.loading,
+                            enabled = (destination != MygosDestination.LOGIN || !loginState.loading) &&
+                                (destination != MygosDestination.REGISTER || !registerViewModel.loading),
                             modifier = Modifier.testTag("navigation_back")
                         ) {
                             Icon(
@@ -198,6 +208,7 @@ fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel,
                             },
                             onRegister = {
                                 loginViewModel.clearForm()
+                                registerViewModel.clearForm()
                                 navController.navigate(MygosDestination.REGISTER.route) { launchSingleTop = true }
                             })
                         MygosDestination.LOGIN -> LoginScreen(
@@ -207,6 +218,7 @@ fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel,
                             onLogin = loginViewModel::login,
                             onRegister = {
                                 loginViewModel.clearForm()
+                                registerViewModel.clearForm()
                                 navController.navigate(MygosDestination.REGISTER.route) { launchSingleTop = true }
                             }
                         )
@@ -219,11 +231,11 @@ fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel,
                                 navController.navigate(MygosDestination.LOGIN.route) { launchSingleTop = true }
                             })
                         MygosDestination.REGISTER -> {
-                            // Estado del formulario acotado al destino, sin persistencia de usuarios.
-                            val registerViewModel: com.duoc.plomoredsocial.viewmodel.RegisterViewModel =
-                                androidx.lifecycle.viewmodel.compose.viewModel()
                             com.duoc.plomoredsocial.ui.auth.RegisterScreen(registerViewModel) {
+                                val email = registerViewModel.registeredEmail ?: registerViewModel.email
                                 loginViewModel.clearForm()
+                                loginViewModel.updateEmail(email)
+                                registerViewModel.clearForm()
                                 navController.navigate(MygosDestination.LOGIN.route) {
                                     popUpTo(MygosDestination.REGISTER.route) { inclusive = true }
                                     launchSingleTop = true
@@ -235,6 +247,7 @@ fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel,
                             logoutFailed = loginState.logoutFailed,
                             onLogout = loginViewModel::logout) { next ->
                             if (next == MygosDestination.LOGIN) loginViewModel.clearForm()
+                            if (next == MygosDestination.REGISTER) registerViewModel.clearForm()
                             navController.navigate(next.route) { launchSingleTop = true }
                         }
                     }

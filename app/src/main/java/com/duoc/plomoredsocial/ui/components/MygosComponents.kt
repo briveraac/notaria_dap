@@ -68,10 +68,10 @@ fun MygosNotice(message: String, isError: Boolean = false, icon: ImageVector = I
 }
 
 @Composable
-fun MygosPrimaryButton(text: String, onClick: () -> Unit, enabled: Boolean = true) {
+fun MygosPrimaryButton(text: String, onClick: () -> Unit, enabled: Boolean = true, modifier: Modifier = Modifier) {
     Button(
         onClick = onClick, enabled = enabled, shape = MaterialTheme.shapes.small,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .heightIn(min = 48.dp)
     ) { Text(text) }

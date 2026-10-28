@@ -72,7 +72,7 @@ internal fun TemporaryScreen(
             ),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        MygosCard {
+        if (destination != MygosDestination.PROFILE) MygosCard {
             Text(
                 stringResource(R.string.nav_pending_title),
                 style = MaterialTheme.typography.titleMedium
@@ -84,23 +84,10 @@ internal fun TemporaryScreen(
             )
         }
         if (destination == MygosDestination.PROFILE) {
-            MygosCard {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Filled.Email, null, tint = MaterialTheme.colorScheme.primary)
-                    Text(
-                        stringResource(R.string.nav_contact_description),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-                MygosPrimaryButton(
-                    stringResource(R.string.contact_title),
-                    { onNavigate(MygosDestination.CONTACT) })
-            }
+            // La cuenta aparece primero; sus datos vienen del estado de sesión.
             if (user != null) {
                 MygosCard {
+                    MygosNotice("Sesión de demostración: estos datos corresponden a la cuenta de prueba.")
                     Text(stringResource(R.string.session_account), style = MaterialTheme.typography.titleMedium)
                     Text(user.name, style = MaterialTheme.typography.titleLarge)
                     Text(user.email, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -112,6 +99,8 @@ internal fun TemporaryScreen(
                 }
             } else {
             MygosCard {
+                Text("¡Bienvenido a Mygos!", style = MaterialTheme.typography.titleLarge)
+                Text("Inicia sesión o explora la demostración de registro para conocer Mygos.")
                 Text(
                     stringResource(R.string.nav_account),
                     style = MaterialTheme.typography.titleMedium
@@ -132,6 +121,22 @@ internal fun TemporaryScreen(
                     Text(stringResource(R.string.nav_register))
                 }
             }
+            }
+            // El contacto permanece disponible debajo de la cuenta en ambos estados.
+            MygosCard {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.Email, null, tint = MaterialTheme.colorScheme.primary)
+                    Text(
+                        stringResource(R.string.nav_contact_description),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                MygosPrimaryButton(
+                    stringResource(R.string.contact_title),
+                    { onNavigate(MygosDestination.CONTACT) })
             }
         }
     }

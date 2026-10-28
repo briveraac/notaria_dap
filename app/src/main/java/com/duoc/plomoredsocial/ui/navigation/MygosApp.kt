@@ -194,6 +194,18 @@ fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel,
                             ContactScreen(viewModel = contactViewModel)
                         }
                         MygosDestination.ACTIVITIES -> ActivitiesScreen(user = loginState.user)
+                        MygosDestination.REGISTER -> {
+                            // Estado del formulario acotado al destino, sin persistencia de usuarios.
+                            val registerViewModel: com.duoc.plomoredsocial.viewmodel.RegisterViewModel =
+                                androidx.lifecycle.viewmodel.compose.viewModel()
+                            com.duoc.plomoredsocial.ui.auth.RegisterScreen(registerViewModel) {
+                                loginViewModel.clearForm()
+                                navController.navigate(MygosDestination.LOGIN.route) {
+                                    popUpTo(MygosDestination.REGISTER.route) { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            }
+                        }
                         else -> TemporaryScreen(item, user = loginState.user,
                             logoutLoading = loginState.loading,
                             logoutFailed = loginState.logoutFailed,

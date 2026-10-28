@@ -10,9 +10,10 @@ data class ActivityEntity(
     val commune: String,
     val meetingPoint: String,
     val schedule: String,
-    val latitude: Double,
-    val longitude: Double,
-    val organizerId: String
+    val latitude: Double?,
+    val longitude: Double?,
+    val organizerId: String,
+    @androidx.room.ColumnInfo(defaultValue = "''") val description: String = ""
 )
 
 @Entity(tableName = "activity_members", primaryKeys = ["activityId", "userId"])

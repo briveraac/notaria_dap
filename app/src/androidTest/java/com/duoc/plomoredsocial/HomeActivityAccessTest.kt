@@ -15,14 +15,14 @@ class HomeActivityAccessTest {
 
     @Before fun waitForHome() {
         compose.waitUntil(10000) {
-            compose.onAllNodesWithTag("home_feed").fetchSemanticsNodes().isNotEmpty() &&
-                compose.onAllNodesWithTag("home_loading").fetchSemanticsNodes().isEmpty()
+            compose.onAllNodesWithTag("bottom_navigation").fetchSemanticsNodes().isNotEmpty()
         }
+        compose.onNodeWithTag("nav_buscar").performClick()
     }
 
     // Busca la tarjeta en el listado y pulsa su botón de consulta.
     private fun viewActivity(id: String) {
-        compose.onNodeWithTag("home_feed").performScrollToNode(hasTestTag("view_activity_${activities.id(id)}"))
+        compose.onNodeWithTag("explore_feed").performScrollToNode(hasTestTag("view_activity_${activities.id(id)}"))
         compose.onNodeWithTag("view_activity_${activities.id(id)}").performClick()
     }
 
@@ -31,31 +31,38 @@ class HomeActivityAccessTest {
 
     // Sin sesión se puede cancelar o ir a las pantallas de Login y Registro existentes.
     @Test fun guestCanCancelAndOpenExistingLoginAndRegistrationRoutes() {
+        // El detalle se puede consultar sin sesión.
         viewActivity("park")
+        compose.onNodeWithTag("activity_detail").assertIsDisplayed()
+        compose.onNodeWithText("Iniciar sesión para participar").performScrollTo().performClick()
         compose.onNodeWithTag("home_access_dialog").assertIsDisplayed()
         dialogText("Cancelar").performClick()
         compose.onNodeWithTag("home_access_dialog").assertDoesNotExist()
-        compose.onNodeWithTag("nav_inicio").assertIsSelected()
+        compose.onNodeWithTag("nav_buscar").assertIsSelected()
 
-        viewActivity("park")
+        compose.onNodeWithTag("explore_feed").performScrollToIndex(0)
+        compose.onNodeWithText("Crear actividad").performClick()
         dialogText("Iniciar sesión").performClick()
         compose.onNodeWithTag("login_email").assertExists()
         compose.onNodeWithTag("home_access_dialog").assertDoesNotExist()
         pressBack()
 
-        viewActivity("park")
+        compose.onNodeWithTag("explore_feed").performScrollToIndex(0)
+        compose.onNodeWithText("Crear actividad").performClick()
         dialogText("Crear cuenta").performClick()
         compose.onNodeWithTag("bottom_navigation").assertDoesNotExist()
-        // La ruta existente repite el título en la barra superior y en el contenido.
-        compose.onAllNodesWithText("Crear cuenta").assertCountEquals(2)
+        // Comprueba el formulario real, independientemente de su título.
+        compose.onNodeWithTag("register_name").assertExists()
+        compose.onNodeWithTag("register_email").assertExists()
         compose.onNodeWithTag("navigation_back").performClick()
-        compose.onNodeWithTag("nav_inicio").assertIsSelected()
+        compose.onNodeWithTag("nav_buscar").assertIsSelected()
         compose.onNodeWithTag("home_access_dialog").assertDoesNotExist()
     }
 
     // Con sesión, consulta la misma actividad guardada que aparece en la sección Actividades.
     @Test fun authenticatedUserCanReadStoredActivitiesInBothSections() {
-        viewActivity("park")
+        compose.onNodeWithTag("explore_feed").performScrollToIndex(0)
+        compose.onNodeWithText("Crear actividad").performClick()
         dialogText("Iniciar sesión").performClick()
         compose.onNodeWithTag("login_email").performScrollTo().performTextInput("demo@mygos.cl")
         compose.onNodeWithTag("login_password").performScrollTo().performTextInput("Mygos2026!")
@@ -63,17 +70,21 @@ class HomeActivityAccessTest {
         compose.waitUntil(10000) {
             compose.onAllNodesWithText("Hola, Alex").fetchSemanticsNodes().isNotEmpty()
         }
+        compose.onNodeWithTag("nav_buscar").performClick()
         listOf("park", "volley", "games").forEach { id ->
             viewActivity(id)
-            compose.onNodeWithTag("home_activity_dialog").assertIsDisplayed()
+            compose.onNodeWithTag("activity_detail").assertIsDisplayed()
             compose.onNodeWithTag("home_access_dialog").assertDoesNotExist()
-            compose.onNode(hasText("Prueba MAIN-004 $id") and hasAnyAncestor(hasTestTag("home_activity_dialog"))).assertIsDisplayed()
-            compose.onNode(hasText("Entrada de la plaza") and hasAnyAncestor(hasTestTag("home_activity_dialog"))).assertIsDisplayed()
-            compose.onNode(hasText("Personas inscritas: 0") and hasAnyAncestor(hasTestTag("home_activity_dialog"))).assertIsDisplayed()
+            compose.onNode(hasText("Prueba MAIN-004 $id") and hasAnyAncestor(hasTestTag("activity_detail"))).assertIsDisplayed()
+            compose.onNode(hasText("Entrada de la plaza") and hasAnyAncestor(hasTestTag("activity_detail"))).assertIsDisplayed()
+            compose.onNode(hasText("Personas inscritas: 0") and hasAnyAncestor(hasTestTag("activity_detail"))).assertIsDisplayed()
             compose.onNodeWithText("Cerrar").performClick()
-            compose.onNodeWithTag("home_activity_dialog").assertDoesNotExist()
+            compose.onNodeWithTag("activity_detail").assertDoesNotExist()
         }
-        compose.onNodeWithTag("nav_actividades").performClick()
-        compose.onNodeWithText("Prueba MAIN-004 park").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("explore_feed").performScrollToIndex(0)
+        compose.onNodeWithText("Ver mapa").performClick()
+        compose.onNodeWithTag("activity_map_dialog").assertIsDisplayed()
+        pressBack()
+        compose.onNodeWithTag("nav_buscar").assertIsSelected()
     }
 }

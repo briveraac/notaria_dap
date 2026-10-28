@@ -37,6 +37,10 @@ class ActivitiesViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun create(activity: ActivityEntity, onSuccess: () -> Unit) = persist {
+        // Revalida al guardar: la hora puede haber pasado mientras el formulario estaba abierto.
+        require(com.duoc.plomoredsocial.model.ActivityFormValidator.isValid(activity)) {
+            "Revisa los datos de la actividad."
+        }
         dao.create(activity)
         onSuccess()
     }

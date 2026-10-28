@@ -10,7 +10,7 @@ import com.duoc.plomoredsocial.model.ActivityEntity
 import com.duoc.plomoredsocial.model.ActivityMember
 import com.duoc.plomoredsocial.model.MygosDatabase
 import com.duoc.plomoredsocial.repository.RoomActivityRepository
-import com.duoc.plomoredsocial.ui.navigation.HomeScreen
+import com.duoc.plomoredsocial.ui.navigation.ExploreScreen
 import com.duoc.plomoredsocial.ui.theme.PlomoRedSocialTheme
 import com.duoc.plomoredsocial.viewmodel.HomeViewModel
 import kotlinx.coroutines.runBlocking
@@ -35,7 +35,7 @@ class HomeRoomIntegrationTest {
         }
         compose.setContent {
             PlomoRedSocialTheme {
-                HomeScreen(null, home.uiState, onLogin = {}, onProfile = {}, onRegister = {})
+                ExploreScreen(null, home.uiState, onLogin = {}, onRegister = {})
             }
         }
         compose.waitUntil(10000) { !home.uiState.loading }
@@ -47,20 +47,23 @@ class HomeRoomIntegrationTest {
     }
 
     @Test fun emptyDatabaseShowsEmptyStateWithoutInventedActivities() {
-        compose.onNodeWithTag("home_feed").performScrollToNode(hasText(
-            "Todavía no hay actividades guardadas en este dispositivo. Puedes crearlas desde la sección Actividades al iniciar sesión."))
+        compose.onNodeWithTag("explore_feed").performScrollToNode(hasText(
+            "Todavía no hay actividades guardadas en este dispositivo. Puedes crearlas aquí al iniciar sesión."))
         compose.onNodeWithText("Caminata por el parque").assertDoesNotExist()
-        compose.onNodeWithText("Todavía no hay actividades guardadas en este dispositivo. Puedes crearlas desde la sección Actividades al iniciar sesión.").assertIsDisplayed()
+        compose.onNodeWithText("Todavía no hay actividades guardadas en este dispositivo. Puedes crearlas aquí al iniciar sesión.").assertIsDisplayed()
     }
 
     @Test fun roomChangesUpdateHomeAndItsRealMemberCount() = runBlocking<Unit> {
+        // Un filtro activo también debe reaccionar a una nueva actividad de Room.
+        compose.onNodeWithTag("explore_query").performScrollTo().performTextInput("Actividad desde Room")
+        compose.onNodeWithTag("explore_commune").performScrollTo().performTextInput("MAI")
         val dao = database.activityDao()
         dao.create(ActivityEntity("room-live", "Actividad desde Room", "Maipú",
             "Entrada de la plaza", "30/10/2026, 18:00", -33.51, -70.76, "organizer"))
         compose.waitUntil(10000) { home.uiState.activities.any { it.id == "room-live" } }
-        compose.onNodeWithTag("home_feed").performScrollToNode(hasTestTag("activity_room-live"))
+        compose.onNodeWithTag("explore_feed").performScrollToNode(hasTestTag("activity_room-live"))
         compose.onNodeWithTag("activity_room-live").assertIsDisplayed()
-        compose.onNodeWithTag("home_feed").performScrollToNode(hasText("Personas inscritas: 0"))
+        compose.onNodeWithTag("explore_feed").performScrollToNode(hasText("Personas inscritas: 0"))
         dao.join(ActivityMember("room-live", "neighbor"))
         compose.waitUntil(10000) {
             compose.onAllNodesWithText("Personas inscritas: 1").fetchSemanticsNodes().isNotEmpty()

@@ -14,6 +14,6 @@ enum class MygosDestination(val route: String, @param:StringRes val title: Int) 
     REGISTER("registro", R.string.nav_register);
 
     companion object {
-        val main = listOf(HOME, SEARCH, ACTIVITIES, PROFILE)
+        val main = listOf(HOME, SEARCH, PROFILE)
     }
 }

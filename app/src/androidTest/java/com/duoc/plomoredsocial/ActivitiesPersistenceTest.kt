@@ -14,6 +14,47 @@ import java.util.UUID
 
 class ActivitiesPersistenceTest {
     @Test
+    fun creationThroughExistingViewModelUpdatesTheSharedCatalogue() = runBlocking {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val database = MygosDatabase.getInstance(context)
+        val id = "main007-create-" + UUID.randomUUID()
+        val activity = ActivityEntity(id, "Creación MAIN-007", "Maipú", "Plaza",
+            "31-12-2099, 18:00", -33.51, -70.76, "test-organizer")
+        val store = androidx.lifecycle.ViewModelStore()
+        lateinit var viewModel: com.duoc.plomoredsocial.viewmodel.ActivitiesViewModel
+        lateinit var catalogue: com.duoc.plomoredsocial.viewmodel.HomeViewModel
+        try {
+            instrumentation.runOnMainSync {
+                viewModel = androidx.lifecycle.ViewModelProvider(store,
+                    androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory(
+                        context.applicationContext as android.app.Application))[
+                    com.duoc.plomoredsocial.viewmodel.ActivitiesViewModel::class.java]
+                catalogue = androidx.lifecycle.ViewModelProvider(store,
+                    com.duoc.plomoredsocial.viewmodel.HomeViewModel.Factory(
+                        com.duoc.plomoredsocial.repository.RoomActivityRepository(database.activityDao())))[
+                    com.duoc.plomoredsocial.viewmodel.HomeViewModel::class.java]
+                viewModel.create(activity) {}
+            }
+            kotlinx.coroutines.withTimeout(10000) {
+                var ready = false
+                while (!ready) {
+                    instrumentation.runOnMainSync {
+                        ready = !viewModel.saving && catalogue.uiState.activities.any { it.id == id }
+                    }
+                    if (!ready) kotlinx.coroutines.delay(20)
+                }
+            }
+            assertTrue(database.activityDao().observeActivities().first().contains(activity))
+            instrumentation.runOnMainSync { assertFalse(viewModel.error) }
+        } finally {
+            instrumentation.runOnMainSync { store.clear() }
+            database.openHelper.writableDatabase.execSQL(
+                "DELETE FROM activities WHERE id = ?", arrayOf(id))
+        }
+    }
+
+    @Test
     fun migrationPreservesContactsAndActivitiesSurviveReopening() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val name = "activities-test-${UUID.randomUUID()}.db"
@@ -25,7 +66,7 @@ class ActivitiesPersistenceTest {
                 old.version = 1
             }
             fun open() = Room.databaseBuilder(context, MygosDatabase::class.java, name)
-                .addMigrations(MygosDatabase.MIGRATION_1_2).build()
+                .addMigrations(MygosDatabase.MIGRATION_1_2, MygosDatabase.MIGRATION_2_3).build()
             val activity = ActivityEntity("activity", "Jugar", "Maipú", "Entrada de la plaza",
                 "30/10/2026, 18:00", -33.51, -70.76, "organizer")
             val firstDatabase = open()

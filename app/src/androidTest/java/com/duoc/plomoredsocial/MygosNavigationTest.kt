@@ -31,7 +31,7 @@ class MygosNavigationTest {
     @Test
     fun bottomSectionsSelectAndRepeatedTapsDoNotDuplicateTheRoute() {
         compose.onNodeWithTag("nav_inicio").assertIsSelected()
-        listOf("buscar", "actividades", "perfil", "inicio").forEach { route ->
+        listOf("buscar", "perfil", "inicio").forEach { route ->
             compose.onNodeWithTag("nav_$route").performClick().assertIsSelected()
         }
         repeat(4) { compose.onNodeWithTag("nav_buscar").performClick() }
@@ -42,7 +42,7 @@ class MygosNavigationTest {
     @Test
     fun profileOpensContactAndReturningPreservesTheForm() {
         compose.onNodeWithTag("nav_perfil").performClick()
-        compose.onNodeWithText("Contáctanos").performClick()
+        compose.onNodeWithText("Contáctanos").performScrollTo().performClick()
         compose.onNodeWithTag("bottom_navigation").assertDoesNotExist()
         compose.onNodeWithText("Nombre o alias").performTextInput("AliasNavegacion")
         compose.onNodeWithTag("navigation_back").performClick()
@@ -72,8 +72,14 @@ class MygosNavigationTest {
 
     @Test
     fun selectedSectionSurvivesActivityRecreation() {
-        compose.onNodeWithTag("nav_actividades").performClick()
+        compose.onNodeWithTag("nav_actividades").assertDoesNotExist()
+        compose.onNodeWithTag("nav_buscar").performClick()
+        compose.onNodeWithText("Ver mapa").performClick()
         compose.activityRule.scenario.recreate()
-        compose.onNodeWithTag("nav_actividades").assertIsSelected()
+        compose.onNodeWithText("Cerrar mapa").performClick()
+        compose.onNodeWithTag("nav_buscar").assertIsSelected()
+        compose.onNodeWithText("Ver mapa").performClick()
+        pressBack()
+        compose.onNodeWithTag("nav_buscar").assertIsSelected()
     }
 }

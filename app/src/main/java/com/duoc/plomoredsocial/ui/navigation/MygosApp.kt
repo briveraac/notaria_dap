@@ -14,7 +14,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
@@ -57,6 +56,13 @@ fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel,
     val showBottomBar = destination in MygosDestination.main
     val loginState = loginViewModel.uiState
 
+    // Actividades es secundaria y vuelve al catálogo que la abrió.
+    BackHandler(enabled = destination == MygosDestination.ACTIVITIES) {
+        if (!navController.popBackStack(MygosDestination.SEARCH.route, false)) {
+            navController.navigate(MygosDestination.SEARCH.route) { launchSingleTop = true }
+        }
+    }
+
     // No abandonamos una autenticación en curso ni dejamos la contraseña al volver.
     BackHandler(enabled = destination == MygosDestination.LOGIN) {
         if (!loginState.loading) {
@@ -93,7 +99,11 @@ fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel,
                         IconButton(
                             onClick = {
                                 if (destination == MygosDestination.LOGIN) loginViewModel.clearForm()
-                                navController.popBackStack()
+                                if (destination == MygosDestination.ACTIVITIES) {
+                                    if (!navController.popBackStack(MygosDestination.SEARCH.route, false)) {
+                                        navController.navigate(MygosDestination.SEARCH.route) { launchSingleTop = true }
+                                    }
+                                } else navController.popBackStack()
                             },
                             enabled = destination != MygosDestination.LOGIN || !loginState.loading,
                             modifier = Modifier.testTag("navigation_back")
@@ -108,7 +118,7 @@ fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel,
             }
         },
         bottomBar = {
-            // La barra solo aparece en las cuatro secciones: queda oculta en acceso y registro.
+            // La barra solo aparece en las tres secciones principales: queda oculta en acceso y registro.
             if (showBottomBar) {
                 // Superficie blanca y selección lavanda.
                 Surface(
@@ -146,7 +156,6 @@ fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel,
                                         imageVector = when (item) {
                                             MygosDestination.HOME -> Icons.Filled.Home
                                             MygosDestination.SEARCH -> Icons.Filled.Search
-                                            MygosDestination.ACTIVITIES -> Icons.Filled.DateRange
                                             else -> Icons.Filled.Person
                                         },
                                         contentDescription = null,
@@ -169,14 +178,25 @@ fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel,
             MygosDestination.entries.forEach { item ->
                 composable(item.route) {
                     when (item) {
-                        MygosDestination.HOME -> HomeScreen(loginState.user, homeViewModel.uiState,
+                        MygosDestination.HOME -> HomeScreen(loginState.user,
                             onLogin = {
                                 loginViewModel.clearForm()
                                 navController.navigate(MygosDestination.LOGIN.route) { launchSingleTop = true }
                             },
                             onProfile = { navController.navigate(MygosDestination.PROFILE.route) { launchSingleTop = true } },
+                            onExplore = {
+                                navController.navigate(MygosDestination.SEARCH.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            })
+                        MygosDestination.SEARCH -> ExploreScreen(loginState.user, homeViewModel.uiState,
+                            onLogin = {
+                                loginViewModel.clearForm()
+                                navController.navigate(MygosDestination.LOGIN.route) { launchSingleTop = true }
+                            },
                             onRegister = {
-                                // Abre el Registro existente desde Inicio y limpia el formulario de acceso.
                                 loginViewModel.clearForm()
                                 navController.navigate(MygosDestination.REGISTER.route) { launchSingleTop = true }
                             })
@@ -193,7 +213,11 @@ fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel,
                         MygosDestination.CONTACT -> {
                             ContactScreen(viewModel = contactViewModel)
                         }
-                        MygosDestination.ACTIVITIES -> ActivitiesScreen(user = loginState.user)
+                        MygosDestination.ACTIVITIES -> ActivitiesScreen(user = loginState.user,
+                            onLogin = {
+                                loginViewModel.clearForm()
+                                navController.navigate(MygosDestination.LOGIN.route) { launchSingleTop = true }
+                            })
                         MygosDestination.REGISTER -> {
                             // Estado del formulario acotado al destino, sin persistencia de usuarios.
                             val registerViewModel: com.duoc.plomoredsocial.viewmodel.RegisterViewModel =

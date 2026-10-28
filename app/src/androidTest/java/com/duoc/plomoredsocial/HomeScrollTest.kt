@@ -13,23 +13,25 @@ class HomeScrollTest {
 
     @Test fun scrollReachesLastActivityAndSurvivesNavigationAndRecreation() {
         compose.waitUntil(10000) {
-            compose.onAllNodesWithTag("home_feed").fetchSemanticsNodes().isNotEmpty() &&
-                compose.onAllNodesWithTag("home_loading").fetchSemanticsNodes().isEmpty()
+            compose.onAllNodesWithTag("bottom_navigation").fetchSemanticsNodes().isNotEmpty() &&
+                compose.onAllNodesWithTag("explore_loading").fetchSemanticsNodes().isEmpty()
         }
-        compose.onNodeWithTag("home_feed").performScrollToNode(hasTestTag("activity_${activities.id("park")}"))
+        compose.onNodeWithTag("nav_buscar").performClick()
+        compose.onNodeWithTag("explore_feed").performScrollToNode(hasTestTag("activity_${activities.id("park")}"))
         compose.onNodeWithTag("activity_${activities.id("park")}").assertIsDisplayed()
-        compose.onNodeWithTag("home_feed").performScrollToNode(hasTestTag("activity_${activities.id("stretch")}"))
+        compose.onNodeWithTag("explore_feed").performScrollToNode(hasTestTag("activity_${activities.id("stretch")}"))
         compose.onNodeWithTag("activity_${activities.id("stretch")}").assertIsDisplayed()
         compose.onNodeWithTag("nav_perfil").performClick()
-        compose.onNodeWithTag("nav_inicio").performClick()
+        compose.onNodeWithTag("nav_buscar").performClick()
         compose.onNodeWithTag("activity_${activities.id("stretch")}").assertIsDisplayed()
         compose.activityRule.scenario.recreate()
         compose.waitUntil(10000) {
-            compose.onAllNodesWithTag("home_feed").fetchSemanticsNodes().isNotEmpty() &&
-                compose.onAllNodesWithTag("home_loading").fetchSemanticsNodes().isEmpty()
+            compose.onAllNodesWithTag("explore_feed").fetchSemanticsNodes().isNotEmpty() &&
+                compose.onAllNodesWithTag("explore_loading").fetchSemanticsNodes().isEmpty()
         }
         compose.onNodeWithTag("activity_${activities.id("stretch")}").assertIsDisplayed()
-        compose.onNodeWithTag("home_feed").performScrollToIndex(0)
+        compose.onNodeWithTag("explore_feed").performScrollToIndex(0)
+        compose.onNodeWithTag("nav_inicio").performClick()
         compose.onNodeWithText("Iniciar sesión").performScrollTo().performClick()
         compose.onNodeWithTag("login_email").assertExists()
     }

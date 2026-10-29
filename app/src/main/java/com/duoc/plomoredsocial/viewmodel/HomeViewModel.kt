@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.duoc.plomoredsocial.model.ActivityEntity
+import com.duoc.plomoredsocial.model.participantCount
 import com.duoc.plomoredsocial.repository.ActivityRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.combine
@@ -30,10 +31,10 @@ class HomeViewModel(private val repository: ActivityRepository) : ViewModel() {
         viewModelScope.launch {
             try {
                 // Si cambian las actividades o los inscritos, Inicio se actualiza.
-                // Solo cuenta las inscripciones existentes; no agrega organizadores ni cupos ficticios.
+                // Incluye al organizador una sola vez, sin crear inscripciones artificiales.
                 combine(repository.observeActivities(), repository.observeMembers()) { activities, members ->
                     HomeUiState(activities = activities, loading = false,
-                        participantCounts = members.groupingBy { it.activityId }.eachCount())
+                        participantCounts = activities.associate { it.id to it.participantCount(members) })
                 }.collect { uiState = it }
             } catch (cancelled: CancellationException) {
                 // Si se detiene la carga, respeta esa interrupción sin mostrar un error.

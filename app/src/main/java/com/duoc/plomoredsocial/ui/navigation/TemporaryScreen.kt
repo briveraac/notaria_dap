@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.duoc.plomoredsocial.R
 import com.duoc.plomoredsocial.ui.components.*
 import com.duoc.plomoredsocial.model.AuthUser
+import com.duoc.plomoredsocial.ui.activities.ProfileActivities
 
 // Solo cubre destinos sin pantalla propia. No inventa perfiles ni actividades.
 @Composable
@@ -97,6 +98,10 @@ internal fun TemporaryScreen(
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                         Text(stringResource(if (logoutLoading) R.string.session_logging_out else R.string.session_logout))
                     }
+                }
+                // La clave de composición descarta listas y diálogos al cambiar de cuenta.
+                androidx.compose.runtime.key(user.id) {
+                    ProfileActivities(user)
                 }
             } else {
             MygosCard {

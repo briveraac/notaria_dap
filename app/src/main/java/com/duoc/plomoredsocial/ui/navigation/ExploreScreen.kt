@@ -161,7 +161,7 @@ private fun ActivityCard(activity: ActivityEntity, participants: Int, onView: ()
 }
 
 // Comparte los datos reales entre la tarjeta y su ventana de información.
-// No supone un estado ni una capacidad: el módulo Actividades todavía no los guarda.
+// La capacidad viene de Room e incluye el cupo del organizador.
 @Composable
 private fun ActivityInformation(activity: ActivityEntity, participants: Int) {
     Text(activity.commune, style = MaterialTheme.typography.labelLarge,
@@ -169,6 +169,6 @@ private fun ActivityInformation(activity: ActivityEntity, participants: Int) {
     Text(activity.schedule, style = MaterialTheme.typography.bodyMedium)
     Text(activity.meetingPoint, style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant)
-    Text(stringResource(R.string.activities_attendees, participants),
+    Text("Participantes: $participants/${activity.capacity}",
         style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }

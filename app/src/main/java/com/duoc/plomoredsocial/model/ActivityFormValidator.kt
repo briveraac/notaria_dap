@@ -69,7 +69,7 @@ object ActivityFormValidator {
         return activity.title.isNotBlank() && activity.title.length <= 100 &&
             activity.commune.isNotBlank() && activity.commune.length <= 100 &&
             activity.meetingPoint.isNotBlank() && activity.meetingPoint.length <= 200 &&
-            descriptionError(activity.description) == null && coordinatesValid &&
+            activity.capacity in 1..10 && descriptionError(activity.description) == null && coordinatesValid &&
             parts.size == 2 && scheduleError(parts[0], parts[1], now) == null
     }
 }

@@ -66,7 +66,7 @@ class ActivitiesPersistenceTest {
                 old.version = 1
             }
             fun open() = Room.databaseBuilder(context, MygosDatabase::class.java, name)
-                .addMigrations(MygosDatabase.MIGRATION_1_2, MygosDatabase.MIGRATION_2_3, MygosDatabase.MIGRATION_3_4).build()
+                .addMigrations(MygosDatabase.MIGRATION_1_2, MygosDatabase.MIGRATION_2_3, MygosDatabase.MIGRATION_3_4, MygosDatabase.MIGRATION_4_5).build()
             val activity = ActivityEntity("activity", "Jugar", "Maipú", "Entrada de la plaza",
                 "30/10/2026, 18:00", -33.51, -70.76, "organizer")
             val firstDatabase = open()

@@ -63,16 +63,19 @@ class HomeRoomIntegrationTest {
         compose.waitUntil(10000) { home.uiState.activities.any { it.id == "room-live" } }
         compose.onNodeWithTag("explore_feed").performScrollToNode(hasTestTag("activity_room-live"))
         compose.onNodeWithTag("activity_room-live").assertIsDisplayed()
-        compose.onNodeWithTag("explore_feed").performScrollToNode(hasText("Personas inscritas: 0"))
+        compose.onNodeWithTag("explore_feed").performScrollToNode(hasText("Participantes: 1/10"))
         dao.join(ActivityMember("room-live", "neighbor"))
         compose.waitUntil(10000) {
-            compose.onAllNodesWithText("Personas inscritas: 1").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithText("Participantes: 2/10").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Personas inscritas: 1").assertIsDisplayed()
+        compose.onNodeWithText("Participantes: 2/10").assertIsDisplayed()
         dao.leave("room-live", "neighbor")
         compose.waitUntil(10000) {
-            compose.onAllNodesWithText("Personas inscritas: 0").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithText("Participantes: 1/10").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Personas inscritas: 0").assertIsDisplayed()
+        compose.onNodeWithText("Participantes: 1/10").assertIsDisplayed()
+        org.junit.Assert.assertTrue(dao.deleteAsOrganizer("room-live", "organizer"))
+        compose.waitUntil(10000) { home.uiState.activities.none { it.id == "room-live" } }
+        compose.onNodeWithTag("activity_room-live").assertDoesNotExist()
     }
 }

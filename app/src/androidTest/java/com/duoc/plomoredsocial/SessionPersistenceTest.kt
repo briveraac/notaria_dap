@@ -37,6 +37,7 @@ class SessionPersistenceTest {
             assertEquals(user.id, first.viewModel.uiState.user?.id)
             assertEquals(email, first.viewModel.uiState.user?.email)
             assertEquals(false, first.viewModel.uiState.user?.isDemo)
+            assertEquals(com.duoc.plomoredsocial.model.UserRole.USER, first.viewModel.uiState.user?.role)
             close(first)
             val fresh = open(LocalSessionStore(directory)).also { instances.add(it) }
             assertEquals(user.id, fresh.viewModel.uiState.user?.id)
@@ -102,6 +103,7 @@ class SessionPersistenceTest {
             // Nuevo ViewModel y nueva fuente: se recupera del disco, no del estado anterior.
             val reopened = open(LocalSessionStore(directory)).also { instances.add(it) }
             assertEquals("Alex", reopened.viewModel.uiState.user?.name)
+            assertTrue(reopened.viewModel.uiState.user?.isAdmin == true)
             assertEquals("demo@mygos.cl", reopened.viewModel.uiState.user?.email)
             instrumentation.runOnMainSync { reopened.viewModel.logout() }
             await { !reopened.viewModel.uiState.loading }

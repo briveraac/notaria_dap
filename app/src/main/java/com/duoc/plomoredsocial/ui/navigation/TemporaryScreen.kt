@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.duoc.plomoredsocial.R
@@ -100,6 +101,9 @@ internal fun TemporaryScreen(
                     }
                 }
                 // La clave de composición descarta listas y diálogos al cambiar de cuenta.
+                if (user.isAdmin) MygosPrimaryButton("Panel de administración", {
+                    onNavigate(MygosDestination.ADMIN)
+                }, modifier = Modifier.testTag("profile_admin"))
                 androidx.compose.runtime.key(user.id) {
                     ProfileActivities(user)
                 }

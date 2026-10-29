@@ -31,7 +31,7 @@ class CapacityMigrationTest {
             }
             repeat(2) {
                 val db = Room.databaseBuilder(context, MygosDatabase::class.java, name)
-                    .addMigrations(MygosDatabase.MIGRATION_4_5).build()
+                    .addMigrations(MygosDatabase.MIGRATION_4_5, MygosDatabase.MIGRATION_5_6).build()
                 try {
                     val activities = db.activityDao().observeActivities().first()
                     assertEquals(2, activities.size)
@@ -52,7 +52,7 @@ class CapacityMigrationTest {
                     assertEquals(1234, user.iterations)
                     assertEquals("test@example.com", user.normalizedEmail)
                     assertFalse(user.isDemo)
-                    assertEquals(5, db.openHelper.readableDatabase.version)
+                    assertEquals(6, db.openHelper.readableDatabase.version)
                 } finally { db.close() }
             }
         } finally { context.deleteDatabase(name) }

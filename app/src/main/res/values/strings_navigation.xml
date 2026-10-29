@@ -1,4 +1,5 @@
 <resources>
+    <string name="nav_admin">Administración</string>
     <string name="nav_brand">Mygos</string>
     <string name="nav_home_description">Descubre actividades. Conecta con personas como tú.</string>
     <string name="nav_search_description">Un espacio para encontrar actividades y personas con tus intereses.</string>

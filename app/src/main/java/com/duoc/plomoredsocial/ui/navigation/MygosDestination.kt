@@ -11,7 +11,8 @@ enum class MygosDestination(val route: String, @param:StringRes val title: Int) 
     PROFILE("perfil", R.string.nav_profile),
     CONTACT("contacto", R.string.contact_title),
     LOGIN("login", R.string.nav_login),
-    REGISTER("registro", R.string.nav_register);
+    REGISTER("registro", R.string.nav_register),
+    ADMIN("administracion", R.string.nav_admin);
 
     companion object {
         val main = listOf(HOME, SEARCH, PROFILE)

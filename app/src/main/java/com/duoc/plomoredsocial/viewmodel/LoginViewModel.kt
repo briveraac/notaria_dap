@@ -13,6 +13,7 @@ import com.duoc.plomoredsocial.repository.AuthRepository
 import com.duoc.plomoredsocial.repository.SessionStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 
 data class LoginUiState(
     val email: String = "",
@@ -32,6 +33,7 @@ class LoginViewModel(
     private val repository: AuthRepository,
     private val sessionStore: SessionStore
 ) : ViewModel() {
+    private var accountObserver: Job? = null
     var uiState by mutableStateOf(LoginUiState())
         private set
 
@@ -42,6 +44,7 @@ class LoginViewModel(
                 val user = id?.let { repository.getUserById(it) }
                 if (id != null && user == null) sessionStore.clear()
                 uiState = LoginUiState(restoringSession = false, user = user)
+                if (user != null) observeAccount(user.id)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (exception: Exception) {
@@ -78,6 +81,7 @@ class LoginViewModel(
                 if (user != null) sessionStore.saveUserId(user.id)
                 uiState = uiState.copy(loading = false, user = user,
                     password = "", error = if (user == null) LoginError.INVALID_CREDENTIALS else null)
+                if (user != null) observeAccount(user.id)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (exception: Exception) {
@@ -92,12 +96,31 @@ class LoginViewModel(
         }
     }
 
+    // Ediciones y eliminaciones de Room actualizan también una sesión ya abierta.
+    private fun observeAccount(id: String) {
+        accountObserver?.cancel()
+        accountObserver = viewModelScope.launch {
+            try {
+                repository.observeUser(id).collect { user ->
+                    if (uiState.user?.id == id) {
+                        uiState = uiState.copy(user = user)
+                        if (user == null && sessionStore.readUserId() == id) sessionStore.clear()
+                    }
+                }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) {
+                uiState = uiState.copy(user = null, error = LoginError.UNAVAILABLE)
+            }
+        }
+    }
+
     fun logout() {
         if (uiState.loading || uiState.restoringSession || uiState.user == null) return
         uiState = uiState.copy(loading = true, logoutFailed = false)
         viewModelScope.launch {
             try {
                 sessionStore.clear()
+                accountObserver?.cancel()
                 uiState = LoginUiState(restoringSession = false)
             } catch (cancelled: CancellationException) {
                 throw cancelled

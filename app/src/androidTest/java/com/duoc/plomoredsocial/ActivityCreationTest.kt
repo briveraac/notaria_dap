@@ -43,7 +43,7 @@ class ActivityCreationTest {
     }
 
     @Test fun manualLocationDescriptionAndNumericFormattingSurviveRecreationAndSave() {
-        Assume.assumeFalse(BuildConfig.MAPS_CONFIGURED)
+        // La creación manual debe funcionar tanto con Maps configurado como sin clave.
         val title = "Creación UI " + UUID.randomUUID()
         val description = "d".repeat(2000)
         val database = MygosDatabase.getInstance(InstrumentationRegistry.getInstrumentation().targetContext)

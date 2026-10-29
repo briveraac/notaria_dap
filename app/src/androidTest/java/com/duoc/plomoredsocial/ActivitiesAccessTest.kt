@@ -56,7 +56,13 @@ class ActivitiesAccessTest {
         if (!BuildConfig.MAPS_CONFIGURED) {
             compose.onNodeWithText("El mapa aún no está disponible. Podrás elegir el punto de encuentro cuando se habilite el servicio.").assertExists()
             compose.onNodeWithTag("activities_map").assertDoesNotExist()
-        } else compose.onNodeWithTag("activities_map").assertExists()
+        } else {
+            // El SDK crea la vista del mapa de forma asíncrona.
+            compose.waitUntil(15000) {
+                compose.onAllNodesWithTag("activities_map", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithTag("activities_map", useUnmergedTree = true).assertExists()
+        }
         compose.onNodeWithText("Cerrar mapa").performClick()
         compose.onNodeWithTag("explore_feed").performScrollToIndex(0)
         compose.onNodeWithText("Crear actividad").performClick()
@@ -70,7 +76,8 @@ class ActivitiesAccessTest {
             compose.onNodeWithText("Elegir punto en el mapa").performScrollTo().assertIsEnabled()
             compose.onNodeWithText("Elegir punto en el mapa").performClick()
             compose.onNodeWithText("Usar este punto").assertIsNotEnabled()
-            compose.onNodeWithText("Cancelar").performClick()
+            // El formulario y el selector tienen Cancelar: se pulsa el del selector del mapa.
+            compose.onNode(hasText("Cancelar") and hasAnySibling(hasText("Usar este punto"))).performClick()
         }
         compose.onNodeWithText("Cancelar").performScrollTo().performClick()
         compose.onNodeWithTag("nav_buscar").assertIsSelected()

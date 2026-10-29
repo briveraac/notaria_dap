@@ -13,8 +13,14 @@ data class ActivityEntity(
     val latitude: Double?,
     val longitude: Double?,
     val organizerId: String,
-    @androidx.room.ColumnInfo(defaultValue = "''") val description: String = ""
+    @androidx.room.ColumnInfo(defaultValue = "''") val description: String = "",
+    @androidx.room.ColumnInfo(defaultValue = "10") val capacity: Int = 10
 )
 
 @Entity(tableName = "activity_members", primaryKeys = ["activityId", "userId"])
 data class ActivityMember(val activityId: String, val userId: String)
+
+// El organizador ocupa un cupo incluso si no tiene inscripción propia.
+fun ActivityEntity.participantCount(members: List<ActivityMember>): Int =
+    1 + members.filter { it.activityId == id && it.userId != organizerId }
+        .map { it.userId }.distinct().size

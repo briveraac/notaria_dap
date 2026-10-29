@@ -77,7 +77,7 @@ class HomeActivityAccessTest {
             compose.onNodeWithTag("home_access_dialog").assertDoesNotExist()
             compose.onNode(hasText("Prueba MAIN-004 $id") and hasAnyAncestor(hasTestTag("activity_detail"))).assertIsDisplayed()
             compose.onNode(hasText("Entrada de la plaza") and hasAnyAncestor(hasTestTag("activity_detail"))).assertIsDisplayed()
-            compose.onNode(hasText("Personas inscritas: 0") and hasAnyAncestor(hasTestTag("activity_detail"))).assertIsDisplayed()
+            compose.onNode(hasText("Participantes: 1/10") and hasAnyAncestor(hasTestTag("activity_detail"))).assertIsDisplayed()
             compose.onNodeWithText("Cerrar").performClick()
             compose.onNodeWithTag("activity_detail").assertDoesNotExist()
         }

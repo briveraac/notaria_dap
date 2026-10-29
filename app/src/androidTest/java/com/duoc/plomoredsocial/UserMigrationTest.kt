@@ -26,7 +26,7 @@ class UserMigrationTest {
                 old.version = 3
             }
             val database = Room.databaseBuilder(context, MygosDatabase::class.java, name)
-                .addMigrations(MygosDatabase.MIGRATION_3_4).build()
+                .addMigrations(MygosDatabase.MIGRATION_3_4, MygosDatabase.MIGRATION_4_5).build()
             try {
                 assertEquals("Vecino", database.contactDao().getById(1)?.alias)
                 val activity = database.activityDao().observeActivities().first().single()

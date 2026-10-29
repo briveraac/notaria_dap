@@ -47,6 +47,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import com.duoc.plomoredsocial.model.ActivityFormValidator
+import com.duoc.plomoredsocial.model.participantCount
 
 // La ruta antigua conserva únicamente el mapa; ya no repite el catálogo ni los filtros.
 @Composable
@@ -70,9 +71,9 @@ fun ActivitiesScreen(user: AuthUser?, onLogin: () -> Unit, viewModel: Activities
 fun ActivityCreation(user: AuthUser, viewModel: ActivitiesViewModel, onDismiss: () -> Unit) {
     ActivityForm(saving = viewModel.saving, failed = viewModel.error,
         onDismiss = { if (!viewModel.saving) onDismiss() },
-        onSave = { title, commune, place, schedule, description, location ->
+        onSave = { title, commune, place, schedule, description, location, capacity ->
             viewModel.create(ActivityEntity(UUID.randomUUID().toString(), title, commune,
-                place, schedule, location?.latitude, location?.longitude, user.id, description), onDismiss)
+                place, schedule, location?.latitude, location?.longitude, user.id, description, capacity), onDismiss)
         })
 }
 
@@ -139,7 +140,9 @@ fun ActivityDetail(activity: ActivityEntity, user: AuthUser?, viewModel: Activit
     onDismiss: () -> Unit, onMap: () -> Unit, onAccess: () -> Unit) {
     val context = LocalContext.current
     var mapsError by remember { mutableStateOf(false) }
+    var confirmingDelete by rememberSaveable(activity.id, user?.id) { mutableStateOf(false) }
     val members = viewModel.members.filter { it.activityId == activity.id }
+    val participants = activity.participantCount(members)
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxSize().safeDrawingPadding()) {
             MygosScreen(Modifier.testTag("activity_detail")) {
@@ -155,17 +158,22 @@ fun ActivityDetail(activity: ActivityEntity, user: AuthUser?, viewModel: Activit
                 val hasCoordinates = activity.latitude != null && activity.longitude != null
                 if (hasCoordinates && !BuildConfig.MAPS_CONFIGURED) MygosNotice("El mapa integrado no está configurado. Puedes consultar la dirección y abrir las indicaciones externas.")
                 if (!hasCoordinates) MygosNotice("Ubicación indicada por dirección o referencia. Esta actividad no tiene coordenadas para mapa o indicaciones.")
-                Text(stringResource(R.string.activities_attendees, members.size))
+                Text("Participantes: $participants/${activity.capacity}")
+                if (participants >= activity.capacity) MygosNotice("Actividad completa")
+                viewModel.operationMessage?.let { MygosNotice(it, isError = true) }
                 if (viewModel.error) MygosNotice(stringResource(R.string.activities_error), isError = true)
                 if (mapsError) MygosNotice(stringResource(R.string.activities_maps_error), isError = true)
                 if (user == null) {
                     MygosPrimaryButton("Iniciar sesión para participar", onAccess)
                 } else if (user.id == activity.organizerId) {
                     Text(stringResource(R.string.activities_organizer))
+                    OutlinedButton(onClick = { confirmingDelete = true }, enabled = !viewModel.saving,
+                        modifier = Modifier.fillMaxWidth().testTag("delete_activity")) { Text("Eliminar actividad") }
                 } else {
                     val joined = members.any { it.userId == user.id }
                     MygosPrimaryButton(stringResource(if (joined) R.string.activities_leave else R.string.activities_join),
-                        { viewModel.toggleMembership(activity.id, user.id, joined) }, !viewModel.saving)
+                        { viewModel.toggleMembership(activity.id, user.id, joined) },
+                        !viewModel.saving && (joined || participants < activity.capacity))
                 }
                 OutlinedButton(onClick = onMap, enabled = hasCoordinates && BuildConfig.MAPS_CONFIGURED, modifier = Modifier.fillMaxWidth()) { Text("Ver mapa") }
                 OutlinedButton(onClick = {
@@ -180,15 +188,32 @@ fun ActivityDetail(activity: ActivityEntity, user: AuthUser?, viewModel: Activit
             }
         }
     }
+    if (confirmingDelete && user?.id == activity.organizerId) {
+        AlertDialog(onDismissRequest = { if (!viewModel.saving) confirmingDelete = false },
+            title = { Text("Eliminar actividad") },
+            text = { Text("Se eliminará la actividad y sus inscripciones. Esta acción es definitiva.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.delete(activity.id, requireNotNull(user).id) {
+                        confirmingDelete = false
+                        onDismiss()
+                    }
+                }, enabled = !viewModel.saving) { Text("Eliminar definitivamente") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmingDelete = false }, enabled = !viewModel.saving) { Text("Cancelar") }
+            })
+    }
 }
 
 // Estado del borrador recuperable; las reglas se comparten con el ViewModel de guardado.
 @Composable
 private fun ActivityForm(
     saving: Boolean, failed: Boolean, onDismiss: () -> Unit,
-    onSave: (String, String, String, String, String, LatLng?) -> Unit
+    onSave: (String, String, String, String, String, LatLng?, Int) -> Unit
 ) {
     var title by rememberSaveable { mutableStateOf("") }
+    var capacity by rememberSaveable { mutableStateOf(10) }
     var commune by rememberSaveable { mutableStateOf("") }
     var place by rememberSaveable { mutableStateOf("") }
     var dateInput by rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue()) }
@@ -240,6 +265,11 @@ private fun ActivityForm(
         Surface(Modifier.fillMaxSize().safeDrawingPadding()) {
             MygosScreen(Modifier.testTag("activity_form")) {
                 Text(stringResource(R.string.activities_create), style = MaterialTheme.typography.headlineMedium)
+                Text("Capacidad máxima: $capacity (incluye al organizador)")
+                // Selector discreto: diez opciones válidas y valor inicial de diez cupos.
+                Slider(value = capacity.toFloat(), onValueChange = { capacity = it.toInt().coerceIn(1, 10) },
+                    valueRange = 1f..10f, steps = 8, enabled = !saving,
+                    modifier = Modifier.testTag("create_capacity"))
                 OutlinedTextField(title, { title = it.take(100) }, label = { Text(stringResource(R.string.activities_title)) },
                     modifier = Modifier.fillMaxWidth().testTag("create_title"), singleLine = true, enabled = !saving,
                     isError = attempted && title.isBlank())
@@ -319,7 +349,7 @@ private fun ActivityForm(
                     attempted = true
                     // Comprueba nuevamente el reloj al pulsar, sin depender de una recomposición previa.
                     if (ActivityFormValidator.scheduleError(date, time) == null && issues.isEmpty()) {
-                        onSave(title.trim(), commune.trim(), place.trim(), "$date, $time", description.trim(), location)
+                        onSave(title.trim(), commune.trim(), place.trim(), "$date, $time", description.trim(), location, capacity)
                     } else currentTime = System.currentTimeMillis()
                 }, !saving && issues.isEmpty())
                 TextButton(onClick = onDismiss, enabled = !saving, modifier = Modifier.fillMaxWidth()) {

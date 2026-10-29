@@ -5,6 +5,29 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 abstract class ActivityDao {
+    @Query("SELECT EXISTS(SELECT 1 FROM users WHERE id = :userId)")
+    protected abstract suspend fun accountExists(userId: String): Boolean
+
+    // Las escrituras de la interfaz se serializan con el borrado de cuentas. Las lecturas
+    // históricas siguen admitiendo IDs antiguos sin modificar sus asociaciones.
+    @Transaction
+    open suspend fun createForAccount(activity: ActivityEntity) {
+        check(accountExists(activity.organizerId)) { "La cuenta ya no está disponible." }
+        create(activity)
+    }
+
+    @Transaction
+    open suspend fun joinForAccount(member: ActivityMember): Boolean {
+        if (!accountExists(member.userId)) return false
+        return join(member)
+    }
+
+    @Query("SELECT COUNT(*) FROM activities WHERE organizerId = :userId")
+    abstract suspend fun countOrganized(userId: String): Int
+
+    @Query("DELETE FROM activity_members WHERE userId = :userId")
+    abstract suspend fun removeUserMemberships(userId: String)
+
     @Query("SELECT * FROM activities ORDER BY rowid DESC")
     abstract fun observeActivities(): Flow<List<ActivityEntity>>
 

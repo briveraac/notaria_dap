@@ -188,6 +188,7 @@ fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel,
             MygosDestination.entries.forEach { item ->
                 composable(item.route) {
                     when (item) {
+                        MygosDestination.ADMIN -> com.duoc.plomoredsocial.ui.admin.AdminRoute(loginState.user)
                         MygosDestination.HOME -> HomeScreen(loginState.user,
                             onLogin = {
                                 loginViewModel.clearForm()

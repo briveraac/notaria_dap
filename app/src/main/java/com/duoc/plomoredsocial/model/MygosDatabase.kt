@@ -10,13 +10,20 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.duoc.plomoredsocial.model.ContactDao
 import com.duoc.plomoredsocial.model.ContactEntity
 
-@Database(entities = [ContactEntity::class, ActivityEntity::class, ActivityMember::class, UserEntity::class], version = 5, exportSchema = true)
+@Database(entities = [ContactEntity::class, ActivityEntity::class, ActivityMember::class, UserEntity::class], version = 6, exportSchema = true)
 abstract class MygosDatabase : RoomDatabase() {
     abstract fun contactDao(): ContactDao
     abstract fun activityDao(): ActivityDao
     abstract fun userDao(): UserDao
 
     companion object {
+        // Conserva IDs y credenciales; no concede permisos por coincidencia de correo.
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'USER'")
+                db.execSQL("UPDATE users SET role = 'ADMIN' WHERE id = 'demo-001' AND isDemo = 1")
+            }
+        }
         // Solo agrega capacidad: conserva todas las tablas y sus datos históricos.
         val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -59,7 +66,7 @@ abstract class MygosDatabase : RoomDatabase() {
                     context.applicationContext,
                     MygosDatabase::class.java,
                     "mygos.db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build().also { instance = it }
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build().also { instance = it }
             }
     }
 }

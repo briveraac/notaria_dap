@@ -51,13 +51,13 @@ class ActivitiesViewModel(application: Application, private val dao: ActivityDao
         require(com.duoc.plomoredsocial.model.ActivityFormValidator.isValid(activity)) {
             "Revisa los datos de la actividad."
         }
-        dao.create(activity)
+        dao.createForAccount(activity)
         onSuccess()
     }
 
     fun toggleMembership(activityId: String, userId: String, joined: Boolean) = persist {
         if (joined) dao.leave(activityId, userId)
-        else if (!dao.join(ActivityMember(activityId, userId))) {
+        else if (!dao.joinForAccount(ActivityMember(activityId, userId))) {
             operationMessage = "La actividad está completa o ya no está disponible."
         }
     }

@@ -29,6 +29,9 @@ class ActivityManagementUiTest {
     @Before fun prepare() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         db = Room.inMemoryDatabaseBuilder(instrumentation.targetContext, MygosDatabase::class.java).build()
+        // La cuenta de esta fixture existe en Room, igual que en el recorrido real.
+        runBlocking { db.userDao().insert(UserEntity(owner.id, owner.name, owner.email, owner.email,
+            "test-hash", "test-salt", "test-only", 1, 256, 1, false)) }
         instrumentation.runOnMainSync {
             model = ActivitiesViewModel(instrumentation.targetContext.applicationContext as Application, db.activityDao())
             store.put("activities", model)

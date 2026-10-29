@@ -25,7 +25,7 @@ class ActivityMigrationTest {
                 old.version = 2
             }
             fun open() = Room.databaseBuilder(context, MygosDatabase::class.java, name)
-                .addMigrations(MygosDatabase.MIGRATION_2_3, MygosDatabase.MIGRATION_3_4, MygosDatabase.MIGRATION_4_5).build()
+                .addMigrations(MygosDatabase.MIGRATION_2_3, MygosDatabase.MIGRATION_3_4, MygosDatabase.MIGRATION_4_5, MygosDatabase.MIGRATION_5_6).build()
             val first = open()
             try {
                 val old = first.activityDao().observeActivities().first().single()

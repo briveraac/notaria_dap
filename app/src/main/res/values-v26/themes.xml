@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Los recursos font nativos se admiten desde API 26. Compose los usa también en API 24/25. -->
+    <style name="Theme.PlomoRedSocial" parent="Theme.Mygos.Base">
+        <item name="android:fontFamily">@font/plus_jakarta_sans</item>
+    </style>
+</resources>

@@ -46,7 +46,7 @@ private fun ProfileActivitySection(title: String, empty: String, activities: Lis
                 Text(activity.title, style = MaterialTheme.typography.titleMedium)
                 Text(activity.schedule)
                 Text(activity.commune, color = MaterialTheme.colorScheme.primary)
-                Text("Participantes: ${activity.participantCount(members)}/${activity.capacity}")
+                MygosMetric("Participantes: ${activity.participantCount(members)}/${activity.capacity}")
                 MygosPrimaryButton("Ver detalle", { onSelect(activity.id) },
                     modifier = Modifier.testTag("${tag}_${activity.id}"))
             }

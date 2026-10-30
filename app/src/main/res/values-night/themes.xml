@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Mygos.Base" parent="android:Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">@color/mygos_system_accent</item>
+        <item name="android:windowBackground">@drawable/mygos_starting_window</item>
+        <item name="android:statusBarColor">@color/mygos_window_background</item>
+        <item name="android:navigationBarColor">@color/mygos_window_background</item>
+        <item name="android:windowLightStatusBar">@bool/mygos_light_system_bars</item>
+    </style>
+</resources>

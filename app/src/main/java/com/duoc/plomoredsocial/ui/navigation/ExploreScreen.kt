@@ -87,15 +87,14 @@ internal fun ExploreScreen(
         ) {
             item(key = "explore_header") {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Explorar", style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.primary)
-                    Text("Encuentra un plan cerca de ti. Busca por título, comuna o punto de encuentro.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    MygosPrimaryButton("Crear actividad", {
-                        if (user == null) accessRequested = true else creating = true
-                    })
-                    OutlinedButton(onClick = { mapActivityId = null; mapVisible = true },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Ver mapa") }
+                    MygosHeader("Explorar", "Encuentra un plan cerca de ti. Busca por título, comuna o punto de encuentro.")
+                    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        MygosPrimaryButton("Crear actividad", {
+                            if (user == null) accessRequested = true else creating = true
+                        }, modifier = Modifier.weight(1f).fillMaxHeight())
+                        OutlinedButton(onClick = { mapActivityId = null; mapVisible = true },
+                            modifier = Modifier.weight(1f).fillMaxHeight().heightIn(min = 52.dp)) { Text("Ver mapa") }
+                    }
                 }
             }
             item(key = "filters") {
@@ -145,9 +144,9 @@ private fun ActivityCard(activity: ActivityEntity, participants: Int, onView: ()
         // Usa un icono incluido en la app; no necesita descargar imágenes de Internet.
         Surface(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium,
             color = MaterialTheme.colorScheme.primaryContainer) {
-            Box(Modifier.height(112.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.height(72.dp), contentAlignment = Alignment.Center) {
                 Icon(Icons.Filled.Place, contentDescription = null,
-                    modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
+                    modifier = Modifier.size(32.dp), tint = MaterialTheme.colorScheme.primary)
             }
         }
         Text(activity.title, style = MaterialTheme.typography.titleLarge,
@@ -169,6 +168,5 @@ private fun ActivityInformation(activity: ActivityEntity, participants: Int) {
     Text(activity.schedule, style = MaterialTheme.typography.bodyMedium)
     Text(activity.meetingPoint, style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant)
-    Text("Participantes: $participants/${activity.capacity}",
-        style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    MygosMetric("Participantes: $participants/${activity.capacity}")
 }

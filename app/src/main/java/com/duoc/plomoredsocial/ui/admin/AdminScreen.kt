@@ -55,9 +55,7 @@ fun AdminScreen(user: AuthUser?, model: AdminViewModel) {
         contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Panel de administración", style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.primary)
-                Text("Administración local de Mygos")
+                MygosHeader("Panel de administración", "Administración local de Mygos")
                 PrimaryTabRow(selectedTabIndex = tab) {
                     Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Usuarios") }, modifier = Modifier.testTag("admin_users_tab"))
                     Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Actividades") }, modifier = Modifier.testTag("admin_activities_tab"))
@@ -72,22 +70,23 @@ fun AdminScreen(user: AuthUser?, model: AdminViewModel) {
                 MygosCard {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(account.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                        Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.small) {
+                        Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = MaterialTheme.shapes.small,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer) {
                             Text(account.role, Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
                         }
                     }
-                    Text("ID: ${account.id}")
+                    Text("ID: ${account.id}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(account.email)
                     Text("Contraseña protegida · Sin visualización", style = MaterialTheme.typography.bodySmall)
-                    OutlinedButton(onClick = { select(account.id, "edit") }, modifier = Modifier.fillMaxWidth().testTag("admin_edit_${account.id}")) {
+                    OutlinedButton(onClick = { select(account.id, "edit") }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("admin_edit_${account.id}")) {
                         Text(if (account.toAuthUser().isAdmin) "Gestionar cuenta" else "Editar")
                     }
-                    TextButton(onClick = { select(account.id, "password") }, modifier = Modifier.fillMaxWidth().testTag("admin_password_${account.id}")) {
+                    TextButton(onClick = { select(account.id, "password") }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("admin_password_${account.id}")) {
                         Text("Restablecer contraseña")
                     }
                     if (account.toAuthUser().isAdmin) Text("Último administrador protegido", color = MaterialTheme.colorScheme.primary)
                     else OutlinedButton(onClick = { select(account.id, "user-delete") },
-                        modifier = Modifier.fillMaxWidth().testTag("admin_delete_user_${account.id}")) { Text("Eliminar usuario") }
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("admin_delete_user_${account.id}")) { Text("Eliminar usuario") }
                 }
             }
         }
@@ -96,14 +95,14 @@ fun AdminScreen(user: AuthUser?, model: AdminViewModel) {
             items(state.activities, key = { it.id }) { activity ->
                 MygosCard {
                     Text(activity.title, style = MaterialTheme.typography.titleMedium)
-                    Text("ID: ${activity.id}")
+                    Text("ID: ${activity.id}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     val organizer = state.users.firstOrNull { it.id == activity.organizerId }
                     Text("Organizador: ${organizer?.name ?: "Cuenta histórica"} · ${activity.organizerId}")
                     Text(activity.schedule)
                     Text(activity.commune)
-                    Text("Participantes: ${activity.participantCount(state.members)}/${activity.capacity}")
+                    MygosMetric("Participantes: ${activity.participantCount(state.members)}/${activity.capacity}")
                     OutlinedButton(onClick = { select(activity.id, "activity-delete") },
-                        modifier = Modifier.fillMaxWidth().testTag("admin_delete_activity_${activity.id}")) { Text("Eliminar actividad") }
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("admin_delete_activity_${activity.id}")) { Text("Eliminar actividad") }
                 }
             }
         }
@@ -159,20 +158,20 @@ private fun AccountEditor(account: UserAccount, passwordMode: Boolean, model: Ad
                 Text("ID: ${account.id}")
                 if (!passwordMode) {
                     OutlinedTextField(name, { name = it }, label = { Text("Nombre o alias") }, enabled = !model.saving,
-                        modifier = Modifier.fillMaxWidth().testTag("admin_name"), singleLine = true,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("admin_name"), singleLine = true,
                         isError = nameError != null, supportingText = { nameError?.let { Text(it) } })
                     OutlinedTextField(email, { email = it }, label = { Text("Correo electrónico") }, enabled = !model.saving,
-                        modifier = Modifier.fillMaxWidth().testTag("admin_email"), singleLine = true,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("admin_email"), singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         isError = emailError != null, supportingText = { emailError?.let { Text(it) } })
                 } else {
                     MygosNotice("Define una contraseña nueva de 12 a 128 caracteres. La contraseña anterior nunca se muestra.")
                     OutlinedTextField(password, { password = it }, label = { Text("Nueva contraseña") }, enabled = !model.saving,
-                        modifier = Modifier.fillMaxWidth().testTag("admin_new_password"), singleLine = true,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("admin_new_password"), singleLine = true,
                         visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         supportingText = { if (password.isNotEmpty()) passwordError?.let { Text(it) } })
                     OutlinedTextField(confirmation, { confirmation = it }, label = { Text("Confirmar contraseña") }, enabled = !model.saving,
-                        modifier = Modifier.fillMaxWidth().testTag("admin_confirm_password"), singleLine = true,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("admin_confirm_password"), singleLine = true,
                         visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         supportingText = { if (confirmation.isNotEmpty()) confirmationError?.let { Text(it) } })
                 }

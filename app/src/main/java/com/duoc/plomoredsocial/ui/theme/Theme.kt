@@ -1,62 +1,61 @@
 package com.duoc.plomoredsocial.ui.theme
 
-import android.os.Build
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Shapes
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80, secondary = PurpleGrey80, tertiary = Pink80
-)
-
-// El esquema claro conserva la identidad de Mygos en todas las pantallas.
-private val LightColorScheme = lightColorScheme(
-    primary = MygosPurple, onPrimary = Color.White,
-    primaryContainer = MygosLavender, onPrimaryContainer = MygosText,
-    secondary = MygosSecondaryText, secondaryContainer = MygosLavender,
-    onSecondaryContainer = MygosPurple,
+// El azul oscuro se usa en enlaces pequeños; el azul oficial se conserva en acciones y marca.
+internal val MygosLightScheme = lightColorScheme(
+    primary = MygosDarkBlue, onPrimary = MygosCardWhite,
+    primaryContainer = MygosSoftAccent, onPrimaryContainer = MygosText,
+    secondary = MygosDarkBlue, onSecondary = MygosCardWhite,
+    secondaryContainer = MygosLavender, onSecondaryContainer = MygosText,
+    tertiary = MygosSuccessText, onTertiary = MygosCardWhite,
+    tertiaryContainer = MygosSuccess, onTertiaryContainer = MygosSuccessText,
     background = MygosBackground, onBackground = MygosText,
-    surface = Color.White, onSurface = MygosText,
-    surfaceVariant = MygosLavender, onSurfaceVariant = MygosSecondaryText,
-    surfaceContainer = MygosBackground, surfaceContainerLow = Color.White,
-    surfaceContainerHigh = MygosBackground,
-    outline = MygosSecondaryText, outlineVariant = MygosOutline,
-    error = Color(0xFFB3261E), errorContainer = Color(0xFFFCEAE8),
-    onErrorContainer = Color(0xFF8C1D18)
+    surface = MygosCardWhite, onSurface = MygosText,
+    surfaceVariant = MygosSoftAccent, onSurfaceVariant = MygosMutedText,
+    surfaceContainer = MygosBackground, surfaceContainerLowest = MygosCardWhite,
+    surfaceContainerLow = MygosCardWhite, surfaceContainerHigh = MygosSoftAccent,
+    surfaceContainerHighest = MygosSoftAccent,
+    outline = MygosMutedText, outlineVariant = MygosOutline,
+    error = MygosErrorText, onError = MygosCardWhite,
+    errorContainer = MygosError, onErrorContainer = MygosOnError
 )
 
+internal val MygosDarkScheme = darkColorScheme(
+    primary = MygosLavender, onPrimary = MygosDarkBackground,
+    primaryContainer = MygosDarkAccent, onPrimaryContainer = MygosDarkText,
+    secondary = MygosDarkText, onSecondary = MygosDarkBackground,
+    secondaryContainer = MygosDarkLavender, onSecondaryContainer = MygosDarkText,
+    tertiary = MygosSuccess, onTertiary = MygosDarkBackground,
+    tertiaryContainer = MygosDarkSuccess, onTertiaryContainer = MygosSuccess,
+    background = MygosDarkBackground, onBackground = MygosDarkText,
+    surface = MygosDarkSurface, onSurface = MygosDarkText,
+    surfaceVariant = MygosDarkSurfaceHigh, onSurfaceVariant = MygosDarkMuted,
+    surfaceContainerLowest = MygosDarkBackground, surfaceContainerLow = MygosDarkSurface,
+    surfaceContainer = MygosDarkSurface, surfaceContainerHigh = MygosDarkSurfaceHigh,
+    surfaceContainerHighest = MygosDarkSurfaceHigh,
+    outline = MygosDarkMuted, outlineVariant = MygosDarkOutline,
+    error = MygosError, onError = MygosOnError,
+    errorContainer = MygosDarkError, onErrorContainer = MygosDarkText
+)
+
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun PlomoRedSocialTheme(
-    darkTheme: Boolean = false,
-    // Se conserva la opción, pero la paleta de la app no cambia con el dispositivo.
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    // Se conserva el parámetro por compatibilidad; el fondo de pantalla no cambia la identidad.
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = if (darkTheme) MygosDarkScheme else MygosLightScheme,
         typography = Typography,
-        shapes = Shapes(
-            small = RoundedCornerShape(12.dp),
-            medium = RoundedCornerShape(16.dp),
-            large = RoundedCornerShape(24.dp)
-        ),
+        shapes = Shapes(extraSmall = RoundedCornerShape(14.dp), small = RoundedCornerShape(16.dp),
+            medium = RoundedCornerShape(24.dp), large = RoundedCornerShape(32.dp), extraLarge = RoundedCornerShape(36.dp)),
         content = content
     )
 }

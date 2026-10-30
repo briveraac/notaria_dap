@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Splash nativo: no retiene la apertura ni interviene en la sesión. -->
+    <style name="Theme.PlomoRedSocial" parent="Theme.Mygos.Base">
+        <item name="android:fontFamily">@font/plus_jakarta_sans</item>
+        <item name="android:windowBackground">@color/mygos_window_background</item>
+        <item name="android:statusBarColor">@color/mygos_window_background</item>
+        <item name="android:navigationBarColor">@color/mygos_window_background</item>
+        <item name="android:windowLightStatusBar">@bool/mygos_light_system_bars</item>
+        <item name="android:windowLightNavigationBar">@bool/mygos_light_system_bars</item>
+        <item name="android:windowSplashScreenBackground">@color/mygos_window_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/mygos_icon_foreground</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/mygos_window_background</item>
+        <item name="android:windowSplashScreenAnimationDuration">0</item>
+    </style>
+</resources>

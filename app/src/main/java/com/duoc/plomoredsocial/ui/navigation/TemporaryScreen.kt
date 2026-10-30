@@ -38,11 +38,7 @@ internal fun TemporaryScreen(
         else -> Icons.Filled.AccountCircle
     }
     MygosScreen {
-        Text(
-            stringResource(R.string.nav_brand),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
+        MygosBrand()
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -94,6 +90,7 @@ internal fun TemporaryScreen(
                     Text(stringResource(R.string.session_account), style = MaterialTheme.typography.titleMedium)
                     Text(user.name, style = MaterialTheme.typography.titleLarge)
                     Text(user.email, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    MygosMetric(user.role.name)
                     if (logoutFailed) MygosNotice(stringResource(R.string.session_logout_error), isError = true)
                     OutlinedButton(onClick = onLogout, enabled = !logoutLoading,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {

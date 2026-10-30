@@ -147,9 +147,11 @@ fun ActivityDetail(activity: ActivityEntity, user: AuthUser?, viewModel: Activit
         Surface(Modifier.fillMaxSize().safeDrawingPadding()) {
             MygosScreen(Modifier.testTag("activity_detail")) {
                 TextButton(onClick = onDismiss) { Text("Cerrar") }
-                Text(activity.title, style = MaterialTheme.typography.headlineMedium)
+                MygosHeader(activity.title)
                 Text(activity.commune, color = MaterialTheme.colorScheme.primary)
                 Text(activity.schedule)
+                Text("Organiza: ${activity.organizerId}", style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(activity.meetingPoint)
                 if (activity.description.isNotBlank()) {
                     Text("Descripción", style = MaterialTheme.typography.titleMedium)
@@ -158,7 +160,7 @@ fun ActivityDetail(activity: ActivityEntity, user: AuthUser?, viewModel: Activit
                 val hasCoordinates = activity.latitude != null && activity.longitude != null
                 if (hasCoordinates && !BuildConfig.MAPS_CONFIGURED) MygosNotice("El mapa integrado no está configurado. Puedes consultar la dirección y abrir las indicaciones externas.")
                 if (!hasCoordinates) MygosNotice("Ubicación indicada por dirección o referencia. Esta actividad no tiene coordenadas para mapa o indicaciones.")
-                Text("Participantes: $participants/${activity.capacity}")
+                MygosMetric("Participantes: $participants/${activity.capacity}")
                 if (participants >= activity.capacity) MygosNotice("Actividad completa")
                 viewModel.operationMessage?.let { MygosNotice(it, isError = true) }
                 if (viewModel.error) MygosNotice(stringResource(R.string.activities_error), isError = true)
@@ -175,7 +177,7 @@ fun ActivityDetail(activity: ActivityEntity, user: AuthUser?, viewModel: Activit
                         { viewModel.toggleMembership(activity.id, user.id, joined) },
                         !viewModel.saving && (joined || participants < activity.capacity))
                 }
-                OutlinedButton(onClick = onMap, enabled = hasCoordinates && BuildConfig.MAPS_CONFIGURED, modifier = Modifier.fillMaxWidth()) { Text("Ver mapa") }
+                OutlinedButton(onClick = onMap, enabled = hasCoordinates && BuildConfig.MAPS_CONFIGURED, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Ver mapa") }
                 OutlinedButton(onClick = {
                     val uri = Uri.parse("https://www.google.com/maps/dir/").buildUpon()
                         .appendQueryParameter("api", "1")
@@ -184,7 +186,7 @@ fun ActivityDetail(activity: ActivityEntity, user: AuthUser?, viewModel: Activit
                         context.startActivity(Intent(Intent.ACTION_VIEW, uri))
                         mapsError = false
                     } catch (_: ActivityNotFoundException) { mapsError = true }
-                }, enabled = hasCoordinates, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.activities_directions)) }
+                }, enabled = hasCoordinates, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(R.string.activities_directions)) }
             }
         }
     }
@@ -264,7 +266,7 @@ private fun ActivityForm(
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxSize().safeDrawingPadding()) {
             MygosScreen(Modifier.testTag("activity_form")) {
-                Text(stringResource(R.string.activities_create), style = MaterialTheme.typography.headlineMedium)
+                MygosHeader(stringResource(R.string.activities_create), "Comparte una idea y define los detalles del encuentro.")
                 Text("Capacidad máxima: $capacity (incluye al organizador)")
                 // Selector discreto: diez opciones válidas y valor inicial de diez cupos.
                 Slider(value = capacity.toFloat(), onValueChange = { capacity = it.toInt().coerceIn(1, 10) },
@@ -337,7 +339,7 @@ private fun ActivityForm(
                     }
                 }
                 OutlinedButton(onClick = { picking = true }, enabled = BuildConfig.MAPS_CONFIGURED && !saving,
-                    modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.activities_pick)) }
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(R.string.activities_pick)) }
                 if (failed) MygosNotice(stringResource(R.string.activities_error), isError = true)
                 if (issues.isNotEmpty()) {
                     MygosNotice("Para guardar:\n" + issues.joinToString("\n") {
@@ -427,7 +429,7 @@ private fun LocationPicker(initial: LatLng?, onDismiss: () -> Unit, onConfirm: (
                     }
                 }
                 MygosPrimaryButton(stringResource(R.string.activities_confirm_point), { selected?.let(onConfirm) }, selected != null)
-                TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.activities_cancel)) }
+                TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(R.string.activities_cancel)) }
             }
         }
     }

@@ -31,13 +31,8 @@ fun LoginScreen(
     val focus = LocalFocusManager.current
     val submit = { focus.clearFocus(); onLogin() }
     MygosScreen {
-        Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.primaryContainer) {
-            Icon(Icons.Filled.Lock, null, Modifier.padding(18.dp).size(30.dp),
-                tint = MaterialTheme.colorScheme.primary)
-        }
-        Text(stringResource(R.string.login_welcome), style = MaterialTheme.typography.headlineMedium)
-        Text(stringResource(R.string.login_subtitle), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(8.dp))
+        MygosBrand()
+        MygosHeader(stringResource(R.string.login_welcome), stringResource(R.string.login_subtitle))
         MygosCard {
             OutlinedTextField(
                 value = state.email, onValueChange = onEmailChange,
@@ -73,6 +68,7 @@ fun LoginScreen(
             }
             state.error?.let { MygosNotice(loginErrorText(it), isError = true) }
             Button(onClick = submit, enabled = !state.loading,
+                colors = mygosButtonColors(),
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("login_submit"),
                 shape = MaterialTheme.shapes.small) {
                 if (state.loading) {

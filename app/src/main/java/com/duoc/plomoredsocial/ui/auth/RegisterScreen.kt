@@ -23,7 +23,8 @@ fun RegisterScreen(viewModel: RegisterViewModel, onLogin: () -> Unit) {
     // Al salir o recrear la vista se descartan los secretos, conservando nombre/correo en el ViewModel.
     DisposableEffect(viewModel) { onDispose { viewModel.clearSensitive() } }
     MygosScreen {
-        Text("Crea tu espacio en Mygos", style = MaterialTheme.typography.headlineMedium)
+        MygosBrand()
+        MygosHeader("Crea tu espacio en Mygos", "Tus próximos encuentros empiezan con una cuenta.")
         MygosNotice("La cuenta se guarda solo en este dispositivo. No hay sincronización, verificación de correo ni recuperación remota de contraseña.")
         if (viewModel.registeredEmail != null) {
             MygosCard {

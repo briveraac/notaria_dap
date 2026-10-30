@@ -45,6 +45,8 @@ import com.duoc.plomoredsocial.ui.components.MygosScreen
 import com.duoc.plomoredsocial.ui.components.MygosCard
 import com.duoc.plomoredsocial.ui.components.MygosNotice
 import com.duoc.plomoredsocial.ui.components.MygosPrimaryButton
+import com.duoc.plomoredsocial.ui.components.MygosHeader
+import com.duoc.plomoredsocial.ui.components.mygosButtonColors
 
 // Pasa a la pantalla los datos del ViewModel y las acciones de los botones.
 @Composable
@@ -89,10 +91,7 @@ fun ContactScreenContent(
             stringResource(R.string.contact_title),
             style = MaterialTheme.typography.headlineMedium
         )
-        Text(
-            stringResource(R.string.contact_intro),
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        MygosHeader("Estamos para escucharte", stringResource(R.string.contact_intro))
         MygosCard {
             Text(
                 stringResource(R.string.contact_privacy),
@@ -208,7 +207,8 @@ fun ContactScreenContent(
 
             ContactSaveStatus.SUCCESS -> MygosNotice(
                 stringResource(R.string.contact_saved),
-                icon = Icons.Filled.CheckCircle
+                icon = Icons.Filled.CheckCircle,
+                success = true
             )
 
             ContactSaveStatus.ERROR -> MygosNotice(
@@ -268,6 +268,7 @@ fun ContactScreenContent(
             confirmButton = {
                 Button(
                     onClick = onConfirm,
+                    colors = mygosButtonColors(),
                     shape = MaterialTheme.shapes.small,
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {

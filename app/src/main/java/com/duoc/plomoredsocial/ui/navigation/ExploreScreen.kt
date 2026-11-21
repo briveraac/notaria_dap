@@ -17,11 +17,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.duoc.plomoredsocial.R
+import com.duoc.plomoredsocial.data.remote.xano.redactedForDisplay
 import com.duoc.plomoredsocial.model.*
 import com.duoc.plomoredsocial.ui.components.*
 import com.duoc.plomoredsocial.viewmodel.HomeUiState
 import com.duoc.plomoredsocial.viewmodel.ActivitiesViewModel
+import com.duoc.plomoredsocial.viewmodel.XanoActivitiesViewModel
 import com.duoc.plomoredsocial.ui.activities.*
 
 // Explorar mantiene el catálogo reactivo y sus accesos según la sesión.
@@ -36,6 +39,7 @@ internal fun ExploreScreen(
     // El ViewModel conserva filtros y los aplica a cada actualización de Room.
     val filters: com.duoc.plomoredsocial.viewmodel.ExploreViewModel =
         androidx.lifecycle.viewmodel.compose.viewModel()
+    val onlineActivities: XanoActivitiesViewModel = viewModel(factory = XanoActivitiesViewModel.Factory())
     val results = filters.filter(state.activities)
     // Recuerda dónde quedó el listado al cambiar de sección o girar el teléfono.
     val listState = rememberLazyListState()
@@ -133,6 +137,65 @@ internal fun ExploreScreen(
                 ActivityCard(activity, state.participantCounts[activity.id] ?: 0,
                     onView = { selectedId = activity.id })
             }
+            item(key = "online_activities") {
+                OnlineActivitiesSection(onlineActivities)
+            }
+        }
+    }
+}
+
+/** Xano is displayed as a separate source; it is never inserted into Room. */
+@Composable
+private fun OnlineActivitiesSection(viewModel: XanoActivitiesViewModel) {
+    val state = viewModel.uiState
+    var detailId by rememberSaveable { mutableStateOf("") }
+
+    MygosCard(Modifier.testTag("xano_activities_section")) {
+        Text("Actividades en línea", style = MaterialTheme.typography.titleLarge)
+        Text("Fuente: Xano. Este catálogo es independiente de las actividades locales de Room.",
+            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+        if (state.loading) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                Text("Consultando Xano…")
+            }
+        }
+        state.error?.let { MygosNotice(it, isError = true) }
+        when {
+            !state.loading && state.activities?.isEmpty() == true ->
+                MygosNotice("Xano respondió correctamente y no hay actividades publicadas.")
+            !state.loading && state.activities != null ->
+                state.activities.forEachIndexed { index, activity ->
+                    MygosCard {
+                        Text("Actividad remota ${index + 1}", style = MaterialTheme.typography.titleMedium)
+                        Text(activity.raw.redactedForDisplay().toString(),
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.testTag("xano_activity_$index"))
+                    }
+                }
+        }
+        OutlinedButton(onClick = viewModel::refresh, enabled = !state.loading,
+            modifier = Modifier.fillMaxWidth().testTag("xano_retry")) {
+            Text("Actualizar actividades en línea")
+        }
+
+        HorizontalDivider()
+        Text("Consultar detalle remoto", style = MaterialTheme.typography.titleMedium)
+        Text("Ingresa el ID de Xano. No se usa el ID local de Room.", style = MaterialTheme.typography.bodySmall)
+        OutlinedTextField(value = detailId, onValueChange = { detailId = it },
+            label = { Text("ID de Xano") }, singleLine = true,
+            modifier = Modifier.fillMaxWidth().testTag("xano_detail_id"))
+        OutlinedButton(onClick = { viewModel.getDetail(detailId) },
+            enabled = detailId.isNotBlank() && !state.detailLoading,
+            modifier = Modifier.fillMaxWidth().testTag("xano_detail_load")) {
+            if (state.detailLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp))
+            else Text("Consultar detalle")
+        }
+        state.detailError?.let { MygosNotice(it, isError = true) }
+        state.detail?.let {
+            Text(it.redactedForDisplay().toString(), style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.testTag("xano_activity_detail"))
         }
     }
 }

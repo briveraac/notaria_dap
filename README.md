@@ -69,3 +69,47 @@ Requiere el SDK Android 37 y el JDK 25 configurados por el proyecto.
 Las pruebas de login cubren validación, lectura de la cuenta temporal,
 credenciales incorrectas, inicio, recreación de la actividad, restauración desde
 disco y cierre de sesión persistente.
+
+## Actividades en línea (Xano)
+
+Explorar incluye una sección separada para consultar actividades de Xano. La URL
+base es `https://x8ki-letl-twmt.n7.xano.io/api:6kDB2GLk/` y también está
+definida en `XanoApiClient`; la pantalla usa Retrofit para `GET
+/actividades` y permite consultar `GET /actividades/{actividades_id}` por el ID
+remoto. Los objetos JSON se conservan sin mapear campos no confirmados y se
+ocultan claves con nombres comunes de credenciales o contacto al mostrarlos.
+
+Room sigue siendo la fuente independiente de usuarios, actividades, inscripciones
+y administración local. Las respuestas de Xano no se insertan ni sincronizan a
+Room; sus IDs tampoco se mezclan con los IDs locales. En esta etapa no se
+sincronizan cupos ni inscritos entre dispositivos.
+
+El contrato OpenAPI compartido no estuvo accesible (HTTP 404) y una consulta
+real de `GET /actividades` respondió HTTP 200 con `[]`. Por ello aún no se conoce
+el esquema de campos de las actividades ni se implementan escrituras. Según lo
+informado, Xano reporta 22 endpoints en el grupo y las escrituras aparecen como
+públicas; no se pudo revisar su Swagger para confirmar esos ajustes. Solo se
+confirmaron los cinco métodos/rutas de actividades indicados para el trabajo.
+Las operaciones `POST`, `PATCH` y `DELETE` no se habilitan desde la app mientras
+no se confirmen autorización y validaciones server-side. No se incluye token ni
+clave. Esta integración tampoco sustituye un requisito separado de Spring Boot.
+
+Las pruebas de `XanoActivityRepository` usan MockWebServer y datos ficticios para
+validar GET, respuesta vacía, objeto JSON sin esquema asumido, errores HTTP,
+forma JSON inválida y timeout. No ejecutan POST contra Xano. Para habilitar más
+rutas, exportar el OpenAPI del grupo sin claves y verificar primero su política
+de autenticación; no compartir una Developer API Key.
+
+Para revisar la integración, abre **Explorar**, desplázate a **Actividades en
+línea** y usa **Actualizar actividades en línea**. La consulta de detalle acepta
+un ID remoto escrito manualmente; no utiliza los UUID de Room. La pantalla
+muestra estados de carga, vacío, error y reintento. El JSON se presenta sin
+suponer nombres de campos, porque el servidor respondió con una lista vacía.
+
+Compila y ejecuta las pruebas de lectura sin generar un APK release:
+
+```powershell
+.\gradlew.bat :app:testDebugUnitTest :app:compileDebugAndroidTestKotlin --rerun-tasks --no-daemon
+```
+
+El estado verificable y el texto para Trello están en `docs/MAIN-009.md`.

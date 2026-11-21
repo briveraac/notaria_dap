@@ -41,9 +41,9 @@ fun MygosScreen(modifier: Modifier = Modifier, content: @Composable ColumnScope.
 }
 
 @Composable
-fun MygosCard(content: @Composable ColumnScope.() -> Unit) {
+fun MygosCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),

@@ -36,8 +36,13 @@ La comprobación ejecutada fue
 BUILD SUCCESSFUL, 26 pruebas unitarias aprobadas, 0 fallos; Kotlin de las
 pruebas instrumentadas compiló. Las pruebas HTTP simuladas cubren GET de lista
 y detalle, JSON genérico, 401, 403, 404, 500, cuerpo vacío y timeout.
-ADB sigue fallando con `Cannot mkdir '\.android': Permission denied`; no se
-ejecutaron pruebas instrumentadas ni la pantalla en el emulador.
+En la verificación inicial, ADB falló dentro del entorno aislado con
+`Cannot mkdir '\.android': Permission denied`. La actualización de FIX-003
+confirmó que ADB funciona fuera de ese aislamiento: Pixel_7 arrancó con
+Cold Boot, Mygos se instaló y se abrieron Inicio, Explorar y Actividades en
+línea. La sección remota mostró la respuesta vacía correcta de Xano. También
+pasaron las dos pruebas instrumentadas de `HomeRoomIntegrationTest` en una
+base Room temporal en memoria. Véase `docs/FIX-003.md`.
 
 ## Pendientes para los criterios de aceptación
 
@@ -46,7 +51,9 @@ ejecutaron pruebas instrumentadas ni la pantalla en el emulador.
 2. Identificar cinco rutas adicionales útiles y demostrar su consumo real.
 3. Proteger las escrituras en Xano con identidad y autorización del servidor;
    probar POST solo con registros ficticios en un entorno de prueba controlado.
-4. Verificar el flujo visual en un dispositivo o emulador cuando ADB funcione.
+4. Continuar la verificación funcional de los demás flujos locales y remotos
+   cuando exista un contrato Xano completo; Inicio, Explorar y el estado vacío
+   de Actividades en línea ya se verificaron en Pixel_7.
 5. Un microservicio Spring Boot, si la pauta lo exige, sigue siendo un requisito
    separado que esta integración de Xano no cumple.
 
@@ -62,7 +69,8 @@ ejecutaron pruebas instrumentadas ni la pantalla en el emulador.
 - 26 pruebas unitarias aprobadas; compilación de instrumentadas aprobada.
 - OpenAPI/Swagger de este grupo: HTTP 404. Faltan cinco endpoints consumidos para el mínimo de siete.
 - POST/PATCH/DELETE pendientes por contrato incompleto y escrituras reportadas públicas.
-- ADB bloqueado por permiso al crear `\.android`; prueba de emulador pendiente.
+- FIX-003: ADB operativo fuera del aislamiento; Pixel_7 arrancó con Cold Boot,
+  Mygos abrió y dos pruebas instrumentadas de Room pasaron.
 
 **Estado sugerido de la tarjeta:** En curso. No marcar finalizada hasta cumplir
 las rutas, seguridad, pruebas reales y revisión visual pendientes.

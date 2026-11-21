@@ -1,6 +1,10 @@
 package com.duoc.plomoredsocial
 
+import android.Manifest
 import android.app.Application
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
 import androidx.compose.runtime.*
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
@@ -9,6 +13,7 @@ import androidx.lifecycle.ViewModelStore
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
 import com.duoc.plomoredsocial.model.*
+import com.duoc.plomoredsocial.notifications.ActivityCreatedNotifier
 import com.duoc.plomoredsocial.ui.activities.*
 import com.duoc.plomoredsocial.ui.components.MygosScreen
 import com.duoc.plomoredsocial.ui.theme.PlomoRedSocialTheme
@@ -17,6 +22,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.*
 import org.junit.Assert.*
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 class ActivityManagementUiTest {
     @get:Rule val compose = createComposeRule()
@@ -28,6 +36,9 @@ class ActivityManagementUiTest {
 
     @Before fun prepare() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
+        if (Build.VERSION.SDK_INT >= 33) instrumentation.uiAutomation.grantRuntimePermission(
+            instrumentation.targetContext.packageName, Manifest.permission.POST_NOTIFICATIONS)
+        (instrumentation.targetContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancelAll()
         db = Room.inMemoryDatabaseBuilder(instrumentation.targetContext, MygosDatabase::class.java).build()
         // La cuenta de esta fixture existe en Room, igual que en el recorrido real.
         runBlocking { db.userDao().insert(UserEntity(owner.id, owner.name, owner.email, owner.email,
@@ -40,6 +51,7 @@ class ActivityManagementUiTest {
 
     @After fun close() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync { store.clear() }
+        (InstrumentationRegistry.getInstrumentation().targetContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancelAll()
         db.close()
     }
 
@@ -65,11 +77,35 @@ class ActivityManagementUiTest {
         assertEquals(capacity, saved.capacity)
         assertEquals(owner.id, saved.organizerId)
         assertNull(saved.latitude); assertNull(saved.longitude)
+        val manager = InstrumentationRegistry.getInstrumentation().targetContext
+            .getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        assertEquals(1, manager.activeNotifications.count { it.id == saved.id.hashCode() })
     }
 
     @Test fun createCapacityOne() = createWithCapacity(1)
     @Test fun createCapacityFive() = createWithCapacity(5)
     @Test fun createCapacityTen() = createWithCapacity(10)
+
+    @Test fun repeatedSaveCallCreatesOneActivityAndOneNotification() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val activity = event("double-save")
+        val callbacks = AtomicInteger(0)
+        val done = CountDownLatch(1)
+        instrumentation.runOnMainSync {
+            model.create(activity) {
+                ActivityCreatedNotifier(context).show(activity)
+                callbacks.incrementAndGet()
+                done.countDown()
+            }
+            model.create(activity) { callbacks.incrementAndGet() }
+        }
+        assertTrue(done.await(10, TimeUnit.SECONDS))
+        assertEquals(1, callbacks.get())
+        assertNotNull(runBlocking { db.activityDao().find(activity.id) })
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        assertEquals(1, manager.activeNotifications.count { it.id == activity.id.hashCode() })
+    }
 
     @Test fun deleteRequiresConfirmationCancelPreservesDataAndThirdPartyHasNoButton() {
         val activity = event("delete")

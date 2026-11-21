@@ -11,7 +11,7 @@ iniciar sesión. El mapa comienza en Santiago y permite desplazarse a otro secto
 Las actividades e inscripciones se guardan en Room en este dispositivo; todavía
 no hay un servidor que las publique o sincronice entre teléfonos. La comuna se
 ingresa manualmente y el filtro busca ese texto; no calcula cercanía por GPS.
-La actualización de la base de datos de versión 1 a 2 conserva los contactos.
+El esquema Room actual es la versión 6.
 
 Para habilitar el mapa integrado:
 
@@ -24,12 +24,45 @@ Para habilitar el mapa integrado:
    la variable de entorno `MAPS_API_KEY`, que tiene prioridad. Volver a compilar.
 
 Sin clave, la pantalla muestra un aviso y deshabilita la elección del punto;
-no intenta iniciar un mapa sin configurar. No se solicitan permisos de ubicación.
+no intenta iniciar un mapa sin configurar. La dirección textual sigue disponible.
 La clave de una app Android se incluye en el APK: las restricciones de Google
 Cloud son necesarias aunque no esté en el repositorio.
 
 Referencias: [configurar Maps SDK](https://developers.google.com/maps/documentation/android-sdk/get-api-key)
 y [Maps Compose](https://github.com/googlemaps/android-maps-compose).
+
+## GPS y notificaciones Android (MAIN-010)
+
+En **Explorar → Crear actividad → Elegir punto en el mapa**, el botón **Usar mi
+ubicación** consulta la posición actual del dispositivo. Android solicita
+`ACCESS_COARSE_LOCATION` y `ACCESS_FINE_LOCATION` solo al tocarlo. Con permiso,
+el mapa se centra en la posición y muestra un marcador; **Usar este punto**
+confirma las coordenadas. Si se deniega el permiso, la ubicación está desactivada
+o no llega una posición, aparece un aviso y se puede reintentar, tocar el mapa
+o continuar solo con la dirección textual. El GPS no filtra actividades cercanas
+ni sincroniza ubicaciones entre teléfonos.
+
+Al guardar correctamente una actividad local en Room, Mygos envía una
+notificación mediante `NotificationManager` y el canal **Actividades creadas**.
+En Android 13 o superior solicita `POST_NOTIFICATIONS` después del guardado.
+Si se deniega, la actividad queda creada igualmente. Cada actividad usa su ID
+para reemplazar un eventual aviso repetido; no hay servicio en segundo plano.
+
+Para probar ambos recursos en Pixel_7:
+
+1. Iniciar el emulador y fijar una ubicación ficticia desde **Extended Controls
+   → Location**, o con `adb emu geo fix -70.6693 -33.4489` (longitud primero).
+2. Iniciar sesión con una cuenta de demostración, abrir **Explorar → Crear
+   actividad → Elegir punto en el mapa** y pulsar **Usar mi ubicación**. Probar
+   primero **No permitir** y luego conceder **Ubicación precisa**; comprobar el
+   aviso en el primer caso y el marcador centrado en el segundo.
+3. Confirmar el punto, completar el formulario con datos ficticios futuros y
+   guardar. Comprobar la actividad en el catálogo local y el aviso en la
+   bandeja de notificaciones. Repetir con `POST_NOTIFICATIONS` denegado: el
+   guardado debe continuar sin aviso.
+
+El estado verificado, los comandos de prueba y las limitaciones están en
+`docs/MAIN-010.md`.
 
 ## Login temporal
 
@@ -55,7 +88,7 @@ Al abrir se consulta nuevamente la cuenta; si ya no existe, se descarta la sesi�
 No se guarda la contraseña. Cerrar sesión borra el acceso persistido antes de
 mostrar la interfaz sin usuario. Desinstalar la app o borrar sus datos también
 elimina la sesión; el archivo está excluido de las copias de seguridad.
-Crear cuenta continúa siendo una pantalla pendiente.
+La pantalla **Crear cuenta** está disponible desde Login.
 
 ## Verificación
 
@@ -65,6 +98,10 @@ Requiere el SDK Android 37 y el JDK 25 configurados por el proyecto.
 .\gradlew.bat :app:testDebugUnitTest :app:assembleDebug :app:compileDebugAndroidTestKotlin
 .\gradlew.bat :app:connectedDebugAndroidTest
 ```
+
+Para MAIN-010, `assembleDebug` terminó correctamente: 29 pruebas unitarias y
+67 pruebas instrumentadas en Pixel_7 aprobaron, sin fallos. Estas últimas
+incluyen Room, creación, navegación y una notificación tras el guardado.
 
 Las pruebas de login cubren validación, lectura de la cuenta temporal,
 credenciales incorrectas, inicio, recreación de la actividad, restauración desde

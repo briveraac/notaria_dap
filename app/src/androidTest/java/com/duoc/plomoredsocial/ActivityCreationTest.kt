@@ -1,5 +1,7 @@
 package com.duoc.plomoredsocial
 
+import android.Manifest
+import android.os.Build
 import android.view.View
 import android.widget.DatePicker
 import android.widget.TimePicker
@@ -28,6 +30,11 @@ class ActivityCreationTest {
     @get:Rule(order = 1) val compose = createAndroidComposeRule<MainActivity>()
 
     @Before fun openForm() {
+        if (Build.VERSION.SDK_INT >= 33) {
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            instrumentation.uiAutomation.grantRuntimePermission(
+                instrumentation.targetContext.packageName, Manifest.permission.POST_NOTIFICATIONS)
+        }
         compose.waitUntil(10000) {
             compose.onAllNodesWithTag("bottom_navigation").fetchSemanticsNodes().isNotEmpty()
         }

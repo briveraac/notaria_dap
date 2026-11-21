@@ -1,8 +1,15 @@
 package com.duoc.plomoredsocial.ui.activities
 
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.net.Uri
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,10 +22,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.core.content.ContextCompat
+import androidx.core.location.LocationManagerCompat
+import androidx.core.os.CancellationSignal
 import com.duoc.plomoredsocial.BuildConfig
 import com.duoc.plomoredsocial.R
 import com.duoc.plomoredsocial.model.ActivityEntity
 import com.duoc.plomoredsocial.model.AuthUser
+import com.duoc.plomoredsocial.notifications.ActivityCreatedNotifier
 import com.duoc.plomoredsocial.ui.components.*
 import com.duoc.plomoredsocial.viewmodel.ActivitiesViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -28,6 +39,8 @@ import com.google.maps.android.compose.*
 import java.util.UUID
 import java.util.Locale
 import java.util.Calendar
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import androidx.compose.foundation.Canvas
@@ -69,11 +82,32 @@ fun ActivitiesScreen(user: AuthUser?, onLogin: () -> Unit, viewModel: Activities
 // Explorar abre el mismo formulario y usa las operaciones existentes del ViewModel.
 @Composable
 fun ActivityCreation(user: AuthUser, viewModel: ActivitiesViewModel, onDismiss: () -> Unit) {
-    ActivityForm(saving = viewModel.saving, failed = viewModel.error,
-        onDismiss = { if (!viewModel.saving) onDismiss() },
+    val context = LocalContext.current
+    val notifier = remember(context) { ActivityCreatedNotifier(context.applicationContext) }
+    var pendingNotification by remember { mutableStateOf<ActivityEntity?>(null) }
+    var awaitingPermission by remember { mutableStateOf(false) }
+    val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) pendingNotification?.let { runCatching { notifier.show(it) } }
+        pendingNotification = null
+        awaitingPermission = false
+        onDismiss()
+    }
+    ActivityForm(saving = viewModel.saving || awaitingPermission, failed = viewModel.error,
+        onDismiss = { if (!viewModel.saving && !awaitingPermission) onDismiss() },
         onSave = { title, commune, place, schedule, description, location, capacity ->
-            viewModel.create(ActivityEntity(UUID.randomUUID().toString(), title, commune,
-                place, schedule, location?.latitude, location?.longitude, user.id, description, capacity), onDismiss)
+            val activity = ActivityEntity(UUID.randomUUID().toString(), title, commune,
+                place, schedule, location?.latitude, location?.longitude, user.id, description, capacity)
+            viewModel.create(activity) {
+                if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context,
+                        Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    pendingNotification = activity
+                    awaitingPermission = true
+                    notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    runCatching { notifier.show(activity) }
+                    onDismiss()
+                }
+            }
         })
 }
 
@@ -412,18 +446,116 @@ private fun ClockIcon() {
 
 @Composable
 private fun LocationPicker(initial: LatLng?, onDismiss: () -> Unit, onConfirm: (LatLng) -> Unit) {
+    val context = LocalContext.current
+    val locationManager = remember(context) {
+        context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+    }
+    val scope = rememberCoroutineScope()
     var latitude by rememberSaveable { mutableStateOf(initial?.latitude) }
     var longitude by rememberSaveable { mutableStateOf(initial?.longitude) }
+    var locating by remember { mutableStateOf(false) }
+    var locationMessage by remember { mutableStateOf<String?>(null) }
+    var approximate by remember { mutableStateOf(false) }
+    val activeRequest = remember { mutableStateOf<CancellationSignal?>(null) }
     val selected = latitude?.let { lat -> longitude?.let { LatLng(lat, it) } }
     val camera = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(initial ?: LatLng(-33.4489, -70.6693), if (initial == null) 11f else 16f)
+    }
+    DisposableEffect(Unit) {
+        onDispose { activeRequest.value?.cancel() }
+    }
+
+    fun locate() {
+        val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val coarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (!fine && !coarse) {
+            locationMessage = "Permiso de ubicación denegado. Puedes elegir el punto manualmente en el mapa."
+            return
+        }
+        if (!LocationManagerCompat.isLocationEnabled(locationManager)) {
+            locationMessage = "La ubicación del dispositivo está desactivada. Actívala o toca el mapa."
+            return
+        }
+        val provider = selectLocationProvider(fine, coarse,
+            locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER),
+            locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))
+        if (provider == null) {
+            locationMessage = "No hay un proveedor de ubicación disponible. Puedes tocar el mapa."
+            return
+        }
+        activeRequest.value?.cancel()
+        val signal = CancellationSignal()
+        activeRequest.value = signal
+        locating = true
+        locationMessage = null
+        approximate = false
+        try {
+            LocationManagerCompat.getCurrentLocation(locationManager, provider, signal,
+                ContextCompat.getMainExecutor(context)) { fix ->
+                if (activeRequest.value !== signal) return@getCurrentLocation
+                activeRequest.value = null
+                locating = false
+                if (fix == null || !fix.latitude.isFinite() || !fix.longitude.isFinite()) {
+                    locationMessage = "No se obtuvo una ubicación actual. Intenta de nuevo o toca el mapa."
+                } else {
+                    val point = LatLng(fix.latitude, fix.longitude)
+                    latitude = point.latitude
+                    longitude = point.longitude
+                    approximate = !fine || provider == LocationManager.NETWORK_PROVIDER
+                    scope.launch { camera.animate(CameraUpdateFactory.newLatLngZoom(point, 16f)) }
+                }
+            }
+            scope.launch {
+                delay(20_000)
+                if (activeRequest.value === signal) {
+                    activeRequest.value = null
+                    signal.cancel()
+                    locating = false
+                    locationMessage = "La búsqueda de ubicación tardó demasiado. Intenta de nuevo o toca el mapa."
+                }
+            }
+        } catch (_: SecurityException) {
+            activeRequest.value = null
+            locating = false
+            locationMessage = "El permiso de ubicación cambió. Vuelve a intentarlo o toca el mapa."
+        } catch (_: RuntimeException) {
+            activeRequest.value = null
+            locating = false
+            locationMessage = "No se pudo consultar la ubicación. Puedes elegir el punto en el mapa."
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) locate()
+        else locationMessage = "Permiso de ubicación denegado. Puedes elegir el punto manualmente en el mapa."
     }
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxSize()) {
             Column(Modifier.safeDrawingPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.activities_pick_hint))
-                GoogleMap(modifier = Modifier.fillMaxWidth().weight(1f), cameraPositionState = camera,
-                    onMapClick = { latitude = it.latitude; longitude = it.longitude }) {
+                OutlinedButton(onClick = {
+                    val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                    val coarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                    if (fine || coarse) locate()
+                    else permissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION,
+                        Manifest.permission.ACCESS_FINE_LOCATION))
+                }, enabled = !locating, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("use_device_location")) {
+                    Text(if (locating) "Buscando ubicación..." else "Usar mi ubicación")
+                }
+                if (locating) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                locationMessage?.let { MygosNotice(it, isError = true) }
+                if (approximate) MygosNotice("Ubicación aproximada. Ajusta el punto en el mapa antes de confirmarlo.")
+                GoogleMap(modifier = Modifier.fillMaxWidth().weight(1f).testTag("location_picker_map"), cameraPositionState = camera,
+                    onMapClick = {
+                        activeRequest.value?.cancel()
+                        activeRequest.value = null
+                        locating = false
+                        locationMessage = null
+                        approximate = false
+                        latitude = it.latitude
+                        longitude = it.longitude
+                    }) {
                     selected?.let {
                         Marker(state = rememberUpdatedMarkerState(it), title = stringResource(R.string.activities_point))
                     }
@@ -433,4 +565,15 @@ private fun LocationPicker(initial: LatLng?, onDismiss: () -> Unit, onConfirm: (
             }
         }
     }
+}
+
+internal fun selectLocationProvider(
+    fineGranted: Boolean,
+    coarseGranted: Boolean,
+    gpsEnabled: Boolean,
+    networkEnabled: Boolean
+): String? = when {
+    fineGranted && gpsEnabled -> LocationManager.GPS_PROVIDER
+    (fineGranted || coarseGranted) && networkEnabled -> LocationManager.NETWORK_PROVIDER
+    else -> null
 }

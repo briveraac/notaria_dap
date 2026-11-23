@@ -99,7 +99,7 @@ Los endpoints REST consumidos de la API Xano (`https://x8ki-letl-twmt.n7.xano.io
 
 1. Agregar la clave de API en `local.properties` (archivo excluido de Git):
    ```properties
-   MAPS_API_KEY=AIzaSy...tu_clave_aqui
+   MAPS_API_KEY=AIzaSy...clave_aqui
    ```
 2. El manifiesto de la aplicación (`AndroidManifest.xml`) incluye el metadato:
    ```xml

@@ -102,6 +102,16 @@ Requiere el SDK Android 37 y el JDK 25 configurados por el proyecto.
 Para MAIN-010, `assembleDebug` terminó correctamente: 29 pruebas unitarias y
 67 pruebas instrumentadas en Pixel_7 aprobaron, sin fallos. Estas últimas
 incluyen Room, creación, navegación y una notificación tras el guardado.
+Al retomar el proyecto el 23 de noviembre de 2026, se repitieron desde cero
+`assembleDebug` y `testDebugUnitTest` con el JBR de Android Studio: compilación
+correcta y 29 pruebas unitarias aprobadas. El diagnóstico de esta sesión y las
+verificaciones pendientes están en `docs/MAIN-010.md`.
+La suite instrumentada completa volvió a pasar en Pixel_7: 67 pruebas,
+sin fallos, errores ni omisiones.
+También se verificó manualmente el GPS simulado, la creación de una actividad
+local visible en Explorar y su aviso en la bandeja de notificaciones. Siguen
+pendientes las pruebas manuales de GPS desactivado y permiso de notificaciones
+denegado.
 
 Las pruebas de login cubren validación, lectura de la cuenta temporal,
 credenciales incorrectas, inicio, recreación de la actividad, restauración desde

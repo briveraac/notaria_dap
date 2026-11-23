@@ -57,11 +57,46 @@ y el botón para confirmar el punto quedó habilitado. Se confirmó el punto y
 el formulario mostró sus coordenadas. Se abrieron Inicio, Explorar y el
 formulario; el mapa de selección cargó.
 
+## Recuperación para Entrega 3 — 23 de noviembre de 2026
+
+`main` estaba limpio al retomar el trabajo. El commit local `1b561bc`
+contiene MAIN-010 y era el único pendiente frente a `origin/main` tras
+`git fetch origin`; no había cambios sin commit que recuperar. Con JBR de
+Android Studio se repitieron `:app:assembleDebug` y `:app:testDebugUnitTest`
+con `--rerun-tasks --no-daemon`: **BUILD SUCCESSFUL**, 29 pruebas unitarias,
+0 fallos. No fue necesaria una corrección del código ni de dependencias.
+
+El primer intento de esta sesión se detuvo antes de compilar por acceso
+denegado al archivo de bloqueo del caché Gradle dentro del entorno aislado;
+la misma compilación ejecutada con acceso autorizado pasó. Los logs de Gradle
+conservados no muestran un fallo posterior al commit MAIN-010. El fallo
+antiguo por claves duplicadas de Retrofit/OkHttp en `libs.versions.toml`
+ocurrió antes de FIX-003 y no permite atribuir una causa al último
+`BUILD FAILED` reportado antes del apagado.
+
+La suite `:app:connectedDebugAndroidTest --no-daemon` se volvió a ejecutar en
+Pixel_7 y terminó **BUILD SUCCESSFUL in 5m 46s**: 67 pruebas instrumentadas,
+0 fallos, 0 errores y 0 omitidas. Incluye las regresiones de Inicio,
+Explorar, actividades locales, Room y el aviso tras guardar. El recorrido
+visual del GPS y Maps requiere comprobación manual.
+
+En la comprobación manual de esta sesión, Inicio y Explorar abrieron, el
+formulario de actividad local y Google Map cargaron y el botón **Usar mi
+ubicación** centró el punto ficticio fijado con
+`adb emu geo fix -70.6693 -33.4489`. Tras conceder ubicación precisa y
+confirmar el marcador, el formulario mostró
+`Punto seleccionado: -33.44890, -70.66930`.
+Se guardó la actividad local ficticia `QA_GPS_20261123`; apareció en Explorar
+con Santiago, 31-12-2099 18:00, Plaza_de_Armas y 1/10 participantes. Android
+solicitó `POST_NOTIFICATIONS` y, tras concederlo, la bandeja mostró
+**Actividad creada** con el nombre de esa actividad. La actividad de prueba
+permanece solo en el emulador.
+
 ## Pendientes y límites de evidencia
 
-- El aviso se verificó en prueba instrumentada con permiso concedido; la
-  bandeja de notificaciones y el rechazo de `POST_NOTIFICATIONS` no se
-  comprobaron manualmente en esta pasada.
+- El aviso se verificó en prueba instrumentada y en la bandeja de Pixel_7 con
+  permiso concedido. El rechazo de `POST_NOTIFICATIONS` no se comprobó
+  manualmente en esta pasada.
 - Un intento de revocar `POST_NOTIFICATIONS` desde el mismo proceso de prueba
   hizo que Android cerrara ese proceso. Ese caso se retiró y la suite final
   pasó; la denegación sigue pendiente de prueba manual desde Ajustes.
@@ -84,5 +119,8 @@ formulario; el mapa de selección cargó.
 - 29 pruebas unitarias y 67/67 instrumentadas de la suite completa aprobadas
   en Pixel_7; las de creación verifican una notificación por actividad.
 - Build debug y ejecución de Inicio, Explorar y selector de mapa comprobados.
+- El 23 de noviembre se repitieron la compilación, 29 pruebas unitarias y
+  67 instrumentadas; GPS simulado, guardado local y bandeja de notificaciones
+  quedaron comprobados manualmente en Pixel_7.
 - Pendiente verificar manualmente ubicación desactivada y rechazo de
   notificaciones; no cerrar la tarjeta hasta registrar esas evidencias.

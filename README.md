@@ -62,7 +62,7 @@ Para compilar el APK release firmado:
    ```
 3. Verificar firma del APK:
    ```powershell
-   & 'C:\Users\Juseppe\AppData\Local\Android\Sdk\build-tools\36.0.0\apksigner.bat' verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
+   & 'C:\Users\tu_usuario\AppData\Local\Android\Sdk\build-tools\36.0.0\apksigner.bat' verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
    ```
 
 ---

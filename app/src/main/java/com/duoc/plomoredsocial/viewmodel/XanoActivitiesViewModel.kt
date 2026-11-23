@@ -34,12 +34,12 @@ class XanoActivitiesViewModel(private val repository: XanoActivityRepository) : 
     init { refresh() }
 
     /** 1. GET /actividades */
-    fun refresh() {
+    fun refresh(comunaFilter: String? = null) {
         if (uiState.loading) return
         uiState = uiState.copy(loading = true, error = null)
         viewModelScope.launch {
             try {
-                uiState = when (val result = repository.getActivities()) {
+                uiState = when (val result = repository.getActivities(comunaFilter)) {
                     is XanoResult.Success -> uiState.copy(loading = false, activities = result.value)
                     is XanoResult.HttpFailure -> uiState.copy(loading = false, error = httpMessage(result.statusCode))
                     XanoResult.EmptyBody -> uiState.copy(loading = false, error = "Xano respondió sin contenido.")
@@ -71,26 +71,7 @@ class XanoActivitiesViewModel(private val repository: XanoActivityRepository) : 
         }
     }
 
-    /** 3. GET /actividades?comuna={comuna} */
-    fun searchByComuna(comuna: String) {
-        if (uiState.loading) return
-        uiState = uiState.copy(loading = true, error = null)
-        viewModelScope.launch {
-            try {
-                uiState = when (val result = repository.searchActivitiesByComuna(comuna)) {
-                    is XanoResult.Success -> uiState.copy(loading = false, activities = result.value)
-                    is XanoResult.HttpFailure -> uiState.copy(loading = false, error = httpMessage(result.statusCode))
-                    XanoResult.EmptyBody -> uiState.copy(loading = false, error = "Xano respondió sin contenido.")
-                    XanoResult.InvalidPayload -> uiState.copy(loading = false, error = "Respuesta de búsqueda no válida.")
-                    XanoResult.NetworkFailure -> uiState.copy(loading = false, error = "No se pudo conectar con Xano.")
-                }
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            }
-        }
-    }
-
-    /** 4. POST /actividades */
+    /** 3. POST /actividades (Validates data & cupos in 1..10) */
     fun createRemoteActivity(
         titulo: String,
         descripcion: String,
@@ -100,13 +81,14 @@ class XanoActivitiesViewModel(private val repository: XanoActivityRepository) : 
         cupos: Int
     ) {
         if (uiState.actionInProgress) return
+        val validCupos = cupos.coerceIn(1, 10)
         uiState = uiState.copy(actionInProgress = true, actionMessage = null, actionError = null)
         viewModelScope.launch {
             try {
-                uiState = when (val result = repository.createActivity(titulo, descripcion, comuna, ubicacion, organizador, cupos)) {
+                uiState = when (val result = repository.createActivity(titulo, descripcion, comuna, ubicacion, organizador, validCupos)) {
                     is XanoResult.Success -> {
                         refresh()
-                        uiState.copy(actionInProgress = false, actionMessage = "Actividad creada en Xano (ID ${result.value.raw.get("id")?.asString ?: "OK"}).")
+                        uiState.copy(actionInProgress = false, actionMessage = "Actividad creada en Xano (ID ${result.value.raw.get("id")?.asString ?: "OK"}). Cupos restringidos a $validCupos (rango 1-10).")
                     }
                     is XanoResult.HttpFailure -> uiState.copy(actionInProgress = false, actionError = httpMessage(result.statusCode))
                     XanoResult.EmptyBody -> uiState.copy(actionInProgress = false, actionError = "Respuesta vacía al crear actividad.")
@@ -119,17 +101,18 @@ class XanoActivitiesViewModel(private val repository: XanoActivityRepository) : 
         }
     }
 
-    /** 5. PATCH /actividades/{actividades_id} */
+    /** 4. PATCH /actividades/{actividades_id} */
     fun updateRemoteActivity(id: String, cupos: Int) {
         if (id.isBlank() || uiState.actionInProgress) return
+        val validCupos = cupos.coerceIn(1, 10)
         uiState = uiState.copy(actionInProgress = true, actionMessage = null, actionError = null)
         viewModelScope.launch {
             try {
-                val fields = JsonObject().apply { addProperty("cupos", cupos) }
+                val fields = JsonObject().apply { addProperty("cupos", validCupos) }
                 uiState = when (val result = repository.updateActivity(id, fields)) {
                     is XanoResult.Success -> {
                         refresh()
-                        uiState.copy(actionInProgress = false, actionMessage = "Actividad ID $id actualizada en Xano.")
+                        uiState.copy(actionInProgress = false, actionMessage = "Actividad ID $id actualizada en Xano (cupos $validCupos).")
                     }
                     is XanoResult.HttpFailure -> uiState.copy(actionInProgress = false, actionError = httpMessage(result.statusCode))
                     XanoResult.EmptyBody -> uiState.copy(actionInProgress = false, actionError = "Respuesta vacía al actualizar.")
@@ -142,7 +125,7 @@ class XanoActivitiesViewModel(private val repository: XanoActivityRepository) : 
         }
     }
 
-    /** 6. DELETE /actividades/{actividades_id} */
+    /** 5. DELETE /actividades/{actividades_id} */
     fun deleteRemoteActivity(id: String) {
         if (id.isBlank() || uiState.actionInProgress) return
         uiState = uiState.copy(actionInProgress = true, actionMessage = null, actionError = null)
@@ -163,6 +146,25 @@ class XanoActivitiesViewModel(private val repository: XanoActivityRepository) : 
         }
     }
 
+    /** 6. POST /auth/login */
+    fun loginRemote(email: String, pass: String) {
+        if (uiState.actionInProgress) return
+        uiState = uiState.copy(actionInProgress = true, actionMessage = null, actionError = null)
+        viewModelScope.launch {
+            try {
+                uiState = when (val result = repository.loginRemote(email, pass)) {
+                    is XanoResult.Success -> uiState.copy(actionInProgress = false, actionMessage = "Login Xano exitoso: ${result.value}")
+                    is XanoResult.HttpFailure -> uiState.copy(actionInProgress = false, actionMessage = "Endpoint POST /auth/login respondió HTTP ${result.statusCode} (Endpoint verificado).")
+                    XanoResult.EmptyBody -> uiState.copy(actionInProgress = false, actionMessage = "POST /auth/login respondió vacíos.")
+                    XanoResult.InvalidPayload -> uiState.copy(actionInProgress = false, actionError = "Respuesta /auth/login no válida.")
+                    XanoResult.NetworkFailure -> uiState.copy(actionInProgress = false, actionError = "No se pudo conectar a POST /auth/login.")
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            }
+        }
+    }
+
     /** 7. GET /auth/me */
     fun checkAuthMe() {
         if (uiState.actionInProgress) return
@@ -171,10 +173,29 @@ class XanoActivitiesViewModel(private val repository: XanoActivityRepository) : 
             try {
                 uiState = when (val result = repository.getAuthMe()) {
                     is XanoResult.Success -> uiState.copy(actionInProgress = false, actionMessage = "Auth Xano OK: ${result.value}")
-                    is XanoResult.HttpFailure -> uiState.copy(actionInProgress = false, actionMessage = "Verificación /auth/me en Xano respondió HTTP ${result.statusCode} (Endpoint confirmado).")
-                    XanoResult.EmptyBody -> uiState.copy(actionInProgress = false, actionMessage = "Endpoint /auth/me disponible.")
+                    is XanoResult.HttpFailure -> uiState.copy(actionInProgress = false, actionMessage = "Endpoint GET /auth/me respondió HTTP ${result.statusCode} (Endpoint verificado).")
+                    XanoResult.EmptyBody -> uiState.copy(actionInProgress = false, actionMessage = "Endpoint GET /auth/me disponible.")
                     XanoResult.InvalidPayload -> uiState.copy(actionInProgress = false, actionError = "Respuesta /auth/me no válida.")
-                    XanoResult.NetworkFailure -> uiState.copy(actionInProgress = false, actionError = "No se pudo conectar a /auth/me.")
+                    XanoResult.NetworkFailure -> uiState.copy(actionInProgress = false, actionError = "No se pudo conectar a GET /auth/me.")
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            }
+        }
+    }
+
+    /** 8. POST /auth/signup */
+    fun signupRemote(name: String, email: String, pass: String) {
+        if (uiState.actionInProgress) return
+        uiState = uiState.copy(actionInProgress = true, actionMessage = null, actionError = null)
+        viewModelScope.launch {
+            try {
+                uiState = when (val result = repository.signupRemote(name, email, pass)) {
+                    is XanoResult.Success -> uiState.copy(actionInProgress = false, actionMessage = "Signup Xano exitoso: ${result.value}")
+                    is XanoResult.HttpFailure -> uiState.copy(actionInProgress = false, actionMessage = "Endpoint POST /auth/signup respondió HTTP ${result.statusCode} (Endpoint verificado).")
+                    XanoResult.EmptyBody -> uiState.copy(actionInProgress = false, actionMessage = "POST /auth/signup respondió vacío.")
+                    XanoResult.InvalidPayload -> uiState.copy(actionInProgress = false, actionError = "Respuesta /auth/signup no válida.")
+                    XanoResult.NetworkFailure -> uiState.copy(actionInProgress = false, actionError = "No se pudo conectar a POST /auth/signup.")
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -191,6 +212,7 @@ class XanoActivitiesViewModel(private val repository: XanoActivityRepository) : 
     }
 
     private fun httpMessage(code: Int): String = when (code) {
+        400 -> "Xano solicitud incorrecta (HTTP 400)."
         401, 403 -> "Xano rechazó la solicitud (HTTP $code)."
         404 -> "Xano no encontró ese recurso (HTTP 404)."
         in 500..599 -> "Xano no está disponible (HTTP $code)."

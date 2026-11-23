@@ -70,33 +70,24 @@ class XanoActivityRepositoryTest {
     }
 
     @Test
-    fun endpoint3_searchActivitiesByComunaSendsQueryParam() = runBlocking {
-        server.enqueue(jsonResponse("[{\"id\":2,\"comuna\":\"Providencia\"}]"))
+    fun endpoint3_createActivitySendsPostWithBodyAndRestrictsCuposToRange() = runBlocking {
+        server.enqueue(jsonResponse("{\"id\":10,\"titulo\":\"Nuevo Evento\",\"cupos\":10}"))
 
-        val result = repository.searchActivitiesByComuna("Providencia")
-
-        assertTrue(result is XanoResult.Success)
-        val request = server.takeRequest()
-        assertEquals("GET", request.method)
-        assertEquals("comuna=Providencia", request.url.query)
-    }
-
-    @Test
-    fun endpoint4_createActivitySendsPostWithBody() = runBlocking {
-        server.enqueue(jsonResponse("{\"id\":10,\"titulo\":\"Nuevo Evento\"}"))
-
-        val result = repository.createActivity("Nuevo Evento", "Desc", "Santiago", "Plaza", "Org", 20)
+        // Cupos 50 is passed, but repository restricts it to 10 (range 1..10)
+        val result = repository.createActivity("Nuevo Evento", "Desc", "Santiago", "Plaza", "Org", 50)
 
         assertTrue(result is XanoResult.Success)
         val request = server.takeRequest()
         assertEquals("POST", request.method)
         assertEquals("/api:6kDB2GLk/actividades", request.url.encodedPath)
-        assertTrue(request.body?.utf8()?.contains("Nuevo Evento") == true)
+        val bodyText = request.body?.utf8() ?: ""
+        assertTrue(bodyText.contains("Nuevo Evento"))
+        assertTrue(bodyText.contains("\"cupos\":10"))
     }
 
     @Test
-    fun endpoint5_updateActivitySendsPatchRequest() = runBlocking {
-        server.enqueue(jsonResponse("{\"id\":10,\"cupos\":25}"))
+    fun endpoint4_updateActivitySendsPatchRequestAndRestrictsCupos() = runBlocking {
+        server.enqueue(jsonResponse("{\"id\":10,\"cupos\":10}"))
 
         val fields = JsonObject().apply { addProperty("cupos", 25) }
         val result = repository.updateActivity("10", fields)
@@ -105,11 +96,12 @@ class XanoActivityRepositoryTest {
         val request = server.takeRequest()
         assertEquals("PATCH", request.method)
         assertEquals("/api:6kDB2GLk/actividades/10", request.url.encodedPath)
-        assertTrue(request.body?.utf8()?.contains("25") == true)
+        val bodyText = request.body?.utf8() ?: ""
+        assertTrue(bodyText.contains("\"cupos\":10"))
     }
 
     @Test
-    fun endpoint6_deleteActivitySendsDeleteRequest() = runBlocking {
+    fun endpoint5_deleteActivitySendsDeleteRequest() = runBlocking {
         server.enqueue(MockResponse.Builder().code(200).body("null").build())
 
         val result = repository.deleteActivity("10")
@@ -118,6 +110,19 @@ class XanoActivityRepositoryTest {
         val request = server.takeRequest()
         assertEquals("DELETE", request.method)
         assertEquals("/api:6kDB2GLk/actividades/10", request.url.encodedPath)
+    }
+
+    @Test
+    fun endpoint6_loginRemoteSendsPostToAuthLogin() = runBlocking {
+        server.enqueue(MockResponse.Builder().code(400).body("{\"message\":\"Bad Request\"}").build())
+
+        val result = repository.loginRemote("demo@mygos.cl", "pass")
+
+        assertEquals(XanoResult.HttpFailure(400), result)
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/api:6kDB2GLk/auth/login", request.url.encodedPath)
+        assertTrue(request.body?.utf8()?.contains("demo@mygos.cl") == true)
     }
 
     @Test
@@ -131,6 +136,19 @@ class XanoActivityRepositoryTest {
         assertEquals("GET", request.method)
         assertEquals("/api:6kDB2GLk/auth/me", request.url.encodedPath)
         assertEquals("Bearer guest", request.headers["Authorization"])
+    }
+
+    @Test
+    fun endpoint8_signupRemoteSendsPostToAuthSignup() = runBlocking {
+        server.enqueue(MockResponse.Builder().code(400).body("{\"message\":\"Bad Request\"}").build())
+
+        val result = repository.signupRemote("Usuario Test", "test@mygos.cl", "pass")
+
+        assertEquals(XanoResult.HttpFailure(400), result)
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/api:6kDB2GLk/auth/signup", request.url.encodedPath)
+        assertTrue(request.body?.utf8()?.contains("Usuario Test") == true)
     }
 
     @Test

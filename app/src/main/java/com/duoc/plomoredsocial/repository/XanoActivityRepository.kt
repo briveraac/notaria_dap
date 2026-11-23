@@ -16,12 +16,13 @@ sealed interface XanoResult<out T> {
     data object NetworkFailure : XanoResult<Nothing>
 }
 
-/** Remote Xano repository for 7 REST operations. Xano data is kept separate from Room. */
+/** Remote Xano repository for distinct REST operations. Xano data is kept separate from Room. */
 class XanoActivityRepository(private val service: XanoApiService) {
 
-    /** 1. GET /actividades */
-    suspend fun getActivities(): XanoResult<List<XanoActivityDto>> {
-        val payload = when (val response = request { service.getActivities() }) {
+    /** 1. GET /actividades (optional comuna query parameter). */
+    suspend fun getActivities(comunaFilter: String? = null): XanoResult<List<XanoActivityDto>> {
+        val queryParam = comunaFilter?.trim()?.ifBlank { null }
+        val payload = when (val response = request { service.getActivities(queryParam) }) {
             is XanoResult.Success -> response.value
             is XanoResult.HttpFailure -> return response
             XanoResult.EmptyBody -> return XanoResult.EmptyBody
@@ -37,20 +38,7 @@ class XanoActivityRepository(private val service: XanoApiService) {
         return request { service.getActivity(id.trim()) }
     }
 
-    /** 3. GET /actividades?comuna={comuna} */
-    suspend fun searchActivitiesByComuna(comuna: String): XanoResult<List<XanoActivityDto>> {
-        if (comuna.isBlank()) return getActivities()
-        val payload = when (val response = request { service.searchActivitiesByComuna(comuna.trim()) }) {
-            is XanoResult.Success -> response.value
-            is XanoResult.HttpFailure -> return response
-            XanoResult.EmptyBody -> return XanoResult.EmptyBody
-            XanoResult.InvalidPayload -> return XanoResult.InvalidPayload
-            XanoResult.NetworkFailure -> return XanoResult.NetworkFailure
-        }
-        return parseActivityList(payload)
-    }
-
-    /** 4. POST /actividades */
+    /** 3. POST /actividades (Validates data and restricts cupos to range 1..10). */
     suspend fun createActivity(
         titulo: String,
         descripcion: String,
@@ -59,13 +47,14 @@ class XanoActivityRepository(private val service: XanoApiService) {
         organizador: String,
         cupos: Int
     ): XanoResult<XanoActivityDto> {
+        val validCupos = cupos.coerceIn(1, 10)
         val body = JsonObject().apply {
-            addProperty("titulo", titulo)
-            addProperty("descripcion", descripcion)
-            addProperty("comuna", comuna)
-            addProperty("ubicacion", ubicacion)
-            addProperty("organizador", organizador)
-            addProperty("cupos", cupos)
+            addProperty("titulo", titulo.trim())
+            addProperty("descripcion", descripcion.trim())
+            addProperty("comuna", comuna.trim())
+            addProperty("ubicacion", ubicacion.trim())
+            addProperty("organizador", organizador.trim())
+            addProperty("cupos", validCupos)
         }
         return when (val response = request { service.createActivity(body) }) {
             is XanoResult.Success -> {
@@ -79,22 +68,46 @@ class XanoActivityRepository(private val service: XanoApiService) {
         }
     }
 
-    /** 5. PATCH /actividades/{actividades_id} */
+    /** 4. PATCH /actividades/{actividades_id} (Restricts cupos to range 1..10 if present). */
     suspend fun updateActivity(id: String, fields: JsonObject): XanoResult<JsonElement> {
         if (id.isBlank()) return XanoResult.InvalidPayload
-        return request { service.updateActivity(id.trim(), fields) }
+        val sanitized = fields.deepCopy()
+        if (sanitized.has("cupos") && sanitized.get("cupos").isJsonPrimitive) {
+            val rawCupos = sanitized.get("cupos").asInt
+            sanitized.addProperty("cupos", rawCupos.coerceIn(1, 10))
+        }
+        return request { service.updateActivity(id.trim(), sanitized) }
     }
 
-    /** 6. DELETE /actividades/{actividades_id} */
+    /** 5. DELETE /actividades/{actividades_id} */
     suspend fun deleteActivity(id: String): XanoResult<JsonElement> {
         if (id.isBlank()) return XanoResult.InvalidPayload
         return request { service.deleteActivity(id.trim()) }
+    }
+
+    /** 6. POST /auth/login */
+    suspend fun loginRemote(email: String, password: String): XanoResult<JsonElement> {
+        val body = JsonObject().apply {
+            addProperty("email", email.trim())
+            addProperty("password", password)
+        }
+        return request { service.login(body) }
     }
 
     /** 7. GET /auth/me */
     suspend fun getAuthMe(token: String = ""): XanoResult<JsonElement> {
         val authHeader = if (token.isBlank()) "Bearer guest" else "Bearer ${token.trim()}"
         return request { service.getAuthMe(authHeader) }
+    }
+
+    /** 8. POST /auth/signup */
+    suspend fun signupRemote(name: String, email: String, password: String): XanoResult<JsonElement> {
+        val body = JsonObject().apply {
+            addProperty("name", name.trim())
+            addProperty("email", email.trim())
+            addProperty("password", password)
+        }
+        return request { service.signup(body) }
     }
 
     private fun parseActivityList(payload: JsonElement): XanoResult<List<XanoActivityDto>> {

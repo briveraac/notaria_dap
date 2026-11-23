@@ -50,11 +50,11 @@ La app se conecta al grupo de API de Xano (`https://x8ki-letl-twmt.n7.xano.io/ap
 Para compilar el APK release firmado:
 1. Definir credenciales en `local.properties` (excluido de Git):
    ```properties
-   RELEASE_STORE_FILE=D:/Juseppe/Desktop/keystore de Mygos/mygos-release.jks
+   RELEASE_STORE_FILE=
    RELEASE_KEY_ALIAS=mygos
-   RELEASE_STORE_PASSWORD=<contraseña_keystore>
-   RELEASE_KEY_PASSWORD=<contraseña_clave>
-   MAPS_API_KEY=<tu_clave_google_maps>
+   RELEASE_STORE_PASSWORD=<keystore>
+   RELEASE_KEY_PASSWORD=<clave>
+   MAPS_API_KEY=<clave_google_maps>
    ```
 2. Compilar APK release:
    ```powershell

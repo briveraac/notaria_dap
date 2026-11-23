@@ -1,10 +1,10 @@
-# Mygos — Aplicación Móvil Android (Kotlin + Jetpack Compose)
+Mygos — Aplicación Móvil Android (Kotlin + Jetpack Compose)
 
 Aplicación móvil Android nativa desarrollada en Kotlin para la exploración, creación y gestión comunitaria de actividades y eventos locales. Implementa una arquitectura reactiva MVVM, almacenamiento local en Room, integración de servicios web REST con Xano y Retrofit, mapas interactivos mediante Google Maps SDK y funcionalidades nativas de Android (GPS y Notificaciones).
 
 ---
 
-## 📋 1. Funcionalidades Principales
+Funcionalidades Principales
 
 - **Autenticación y Sesión:** Autenticación local persistente (PBKDF2 con salt), registro de usuarios y control de sesiones sin exponer contraseñas en memoria.
 - **Exploración de Actividades:** Catálogo interactivo de actividades locales con filtros por comuna, texto y mapa en tiempo real.
@@ -16,7 +16,7 @@ Aplicación móvil Android nativa desarrollada en Kotlin para la exploración, c
 
 ---
 
-## 🏗️ 2. Arquitectura y Tecnologías
+Arquitectura y Tecnologías
 
 - **Lenguaje:** Kotlin 2.0.21 / Java JDK 25 (JBR Android Studio)
 - **UI Framework:** Jetpack Compose + Material 3 (Typography Plus Jakarta Sans)
@@ -29,7 +29,7 @@ Aplicación móvil Android nativa desarrollada en Kotlin para la exploración, c
 
 ---
 
-## 🎯 3. Requisitos de la Entrega 3 y Estado Real
+Requisitos de la Entrega 3 y Estado Real
 
 | Requisito | Estado Real | Evidencia y Verificación |
 |---|---|---|
@@ -43,7 +43,7 @@ Aplicación móvil Android nativa desarrollada en Kotlin para la exploración, c
 
 ---
 
-## 🌐 4. Tabla de Siete (7) Endpoints REST Diferentes (Xano)
+Tabla de Siete (7) Endpoints REST Diferentes (Xano)
 
 Los endpoints REST consumidos de la API Xano (`https://x8ki-letl-twmt.n7.xano.io/api:6kDB2GLk/`) corresponden a combinaciones **únicas** de método HTTP y ruta URI (sin contar parámetros de consulta):
 
@@ -59,7 +59,7 @@ Los endpoints REST consumidos de la API Xano (`https://x8ki-letl-twmt.n7.xano.io
 
 ---
 
-## 🔒 5. Integración de Xano y Separación con Room
+Integración de Xano y Separación con Room
 
 - **Aislamiento de Persistencia:** Room (versión 6) administra los usuarios, actividades locales, inscripciones y panel ADMIN de manera totalmente independiente. Las respuestas de Xano no se escriben en Room ni sustituyen los datos locales.
 - **IDs Separados:** Los identificadores locales de Room (UUID / IDs autonuméricos) no se confunden ni se envían como IDs remotos de Xano.
@@ -67,7 +67,7 @@ Los endpoints REST consumidos de la API Xano (`https://x8ki-letl-twmt.n7.xano.io
 
 ---
 
-## 📱 6. Dos Recursos Nativos de Android
+Dos Recursos Nativos de Android
 
 1. **GPS y Ubicación Real (`FusedLocationProviderClient`)**:
    - Solicita permisos `ACCESS_FINE_LOCATION` y `ACCESS_COARSE_LOCATION` en tiempo de ejecución al pulsar *Usar mi ubicación*.
@@ -81,7 +81,7 @@ Los endpoints REST consumidos de la API Xano (`https://x8ki-letl-twmt.n7.xano.io
 
 ---
 
-## 🧪 7. Pruebas Unitarias e Instrumentadas
+Pruebas Unitarias e Instrumentadas
 
 ### Pruebas Unitarias (JUnit 4 + MockWebServer)
 - **Aprobadas:** 35 pruebas unitarias.
@@ -97,23 +97,22 @@ Los endpoints REST consumidos de la API Xano (`https://x8ki-letl-twmt.n7.xano.io
 
 ## 🗺️ 8. Configuración de Google Maps SDK
 
-1. Agregar la clave de API en `local.properties` (archivo excluido de Git):
+Agregar la clave de API en `local.properties` (archivo excluido de Git):
    ```properties
-   MAPS_API_KEY=AIzaSy...clave_aqui
+   MAPS_API_KEY=AIzaSy...clave
    ```
-2. El manifiesto de la aplicación (`AndroidManifest.xml`) incluye el metadato:
+El manifiesto de la aplicación (`AndroidManifest.xml`) incluye el metadato:
    ```xml
    <meta-data
        android:name="com.google.android.geo.API_KEY"
        android:value="${MAPS_API_KEY}" />
    ```
-3. Paquete de la aplicación: `com.duoc.plomoredsocial`.
-4. SHA-1 del certificado Release para restricción en Google Cloud Console:
-   `93:A8:32:DA:31:6E:8A:75:13:26:25:7D:05:20:D0:D6:C4:00:75:BA`
+Paquete de la aplicación: `com.duoc.plomoredsocial`.
+
 
 ---
 
-## 🛠️ 9. Compilación Debug y Pruebas
+ Compilación Debug y Pruebas
 
 Para ejecutar la compilación debug y la suite unitaria:
 
@@ -129,13 +128,13 @@ $env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr'
 
 ---
 
-## 📦 10. Generación del APK Release Firmado
+Generación del APK Release Firmado
 
 La variante release requiere las propiedades de firma en `local.properties`:
 
 ```properties
-RELEASE_STORE_FILE=D:/Juseppe/Desktop/keystore de Mygos/mygos-release.jks
-RELEASE_STORE_PASSWORD=<contraseña_keystore>
+RELEASE_STORE_FILE=
+RELEASE_STORE_PASSWORD=<keystore>
 RELEASE_KEY_ALIAS=mygos
 RELEASE_KEY_PASSWORD=<contraseña_alias>
 ```
@@ -149,21 +148,13 @@ Para generar el APK release firmado:
 El APK resultante se ubica en:
 `app/build/outputs/apk/release/app-release.apk`
 
----
 
-## 🔍 11. Verificación de Firma mediante apksigner
-
-Para verificar que el APK release no es debuggable y cuenta con la firma v2 válida:
-
-```powershell
-& 'C:\Users\Juseppe\AppData\Local\Android\Sdk\build-tools\36.0.0\apksigner.bat' verify --verbose --print-certs 'app/build/outputs/apk/release/app-release.apk'
-```
 
 **Resultado esperado:** `Verifies`, `Verified using v2 scheme: true`, algoritmo RSA 3072 bits.
 
 ---
 
-## 📲 12. Instalación y Prueba del APK
+Instalación y Prueba del APK
 
 Con un emulador Pixel 7 o dispositivo conectado vía ADB:
 
@@ -173,7 +164,7 @@ Con un emulador Pixel 7 o dispositivo conectado vía ADB:
 
 ---
 
-## 📂 13. Estructura Técnica del Proyecto
+ Estructura Técnica del Proyecto
 
 ```
 notaria_dap/
@@ -198,7 +189,7 @@ notaria_dap/
 
 ---
 
-## ⚠️ 14. Limitaciones y Pendientes Reales
+ Limitaciones y Pendientes Reales
 
 - **Rotación de Credenciales:** Tras la entrega final se deberán rotar las claves de API locales en Google Cloud y actualizar contraseñas del keystore release.
 - **Sincronización Bidireccional:** Room y Xano se mantienen deliberadamente separados en esta entrega; no existe sincronización en segundo plano de inscritos entre teléfonos.

@@ -1,60 +1,135 @@
 package com.duoc.plomoredsocial
 
-import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
 import androidx.test.platform.app.InstrumentationRegistry
-import com.duoc.plomoredsocial.repository.TemporaryAuthRepository
-import kotlinx.coroutines.runBlocking
+import com.duoc.plomoredsocial.model.AuthUser
+import com.duoc.plomoredsocial.model.LoginError
+import com.duoc.plomoredsocial.repository.AuthNetworkException
+import com.duoc.plomoredsocial.repository.AuthSession
+import com.duoc.plomoredsocial.repository.InvalidCredentialsException
+import com.duoc.plomoredsocial.viewmodel.LoginViewModel
+import kotlinx.coroutines.delay
 import org.junit.Assert.*
-import org.junit.Rule
 import org.junit.Test
-import org.junit.Before
 
+/** Exercises the real ViewModel with a fake server; no demo account or live Xano call. */
 class LoginTest {
-    @get:Rule(order = 0) val session = IsolatedSessionRule()
-    @get:Rule(order = 1) val compose = createAndroidComposeRule<MainActivity>()
+    private val instrumentation = InstrumentationRegistry.getInstrumentation()
+    private val remoteUser = AuthUser("42", "Vecina remota", "vecina@example.com")
 
-    @Before fun waitForSessionRestoration() {
-        compose.waitUntil(10000) {
-            compose.onAllNodesWithTag("bottom_navigation").fetchSemanticsNodes().isNotEmpty()
+    @Test fun normalizedLoginStoresTokenOnceAndLogoutClearsIt() {
+        val repository = FakeRemoteAuthRepository()
+        val store = MemoryTokenStore()
+        val owner = ViewModelStore()
+        var attempts = 0
+        var submittedEmail: String? = null
+        var submittedPassword: String? = null
+        repository.login = { email, password ->
+            attempts++
+            submittedEmail = email
+            submittedPassword = password
+            delay(100)
+            AuthSession(remoteUser, "token-fixture")
         }
+        try {
+            val vm = onMain { ViewModelProvider(owner, LoginViewModel.Factory(repository, store))[LoginViewModel::class.java] }
+            awaitAuthState { !vm.uiState.restoringSession }
+            onMain {
+                vm.updateEmail(" VECINA@EXAMPLE.COM ")
+                vm.updatePassword(" frase con espacios ")
+                vm.login()
+                vm.login()
+            }
+            awaitAuthState { !vm.uiState.loading }
+            assertEquals(1, attempts)
+            assertEquals("vecina@example.com", submittedEmail)
+            assertEquals(" frase con espacios ", submittedPassword)
+            assertEquals("token-fixture", store.token)
+            assertNull(store.userId)
+            assertEquals(remoteUser, vm.uiState.user)
+            assertEquals("", vm.uiState.password)
+            onMain { vm.logout() }
+            awaitAuthState { vm.uiState.user == null && !vm.uiState.loading }
+            assertNull(store.token)
+            assertEquals(1, store.clearCount)
+        } finally { onMain { owner.clear() } }
     }
 
-    @Test fun temporaryCredentialsAuthenticateAndRejectWrongPasswords() = runBlocking {
-        val assets = InstrumentationRegistry.getInstrumentation().targetContext.assets
-        val repository = TemporaryAuthRepository(assets)
-        assertEquals("Alex", repository.authenticate(" Demo@MYGOS.cl ", "Mygos2026!")?.name)
-        assertNull(repository.authenticate("demo@mygos.cl", "incorrecta"))
-        assertNull(repository.authenticate("desconocido@mygos.cl", "Mygos2026!"))
-        assertNull(repository.authenticate("demo@mygos.cl", " Mygos2026! "))
+    @Test fun invalidCredentialsAndNetworkFailureNeverSaveASession() {
+        val repository = FakeRemoteAuthRepository()
+        val store = MemoryTokenStore()
+        val owner = ViewModelStore()
+        try {
+            val vm = onMain { ViewModelProvider(owner, LoginViewModel.Factory(repository, store))[LoginViewModel::class.java] }
+            awaitAuthState { !vm.uiState.restoringSession }
+            repository.login = { _, _ -> throw InvalidCredentialsException() }
+            onMain {
+                vm.updateEmail("vecina@example.com")
+                vm.updatePassword("incorrecta")
+                vm.login()
+            }
+            awaitAuthState { !vm.uiState.loading && vm.uiState.error != null }
+            assertEquals(LoginError.INVALID_CREDENTIALS, vm.uiState.error)
+            assertNull(store.token)
+            repository.login = { _, _ -> throw AuthNetworkException() }
+            onMain { vm.updatePassword("otra contraseña"); vm.login() }
+            awaitAuthState { !vm.uiState.loading && vm.uiState.error != null }
+            assertEquals(LoginError.UNAVAILABLE, vm.uiState.error)
+            assertNull(store.token)
+        } finally { onMain { owner.clear() } }
     }
 
-    @Test fun homeLoginValidatesAuthenticatesAndLogsOut() {
-        compose.onNodeWithText("Iniciar sesión").performScrollTo().performClick()
-        compose.onNodeWithTag("login_submit").performScrollTo().performClick()
-        compose.onNodeWithText("Ingresa tu correo electrónico.").assertExists()
-        compose.onNodeWithText("Ingresa tu contraseña.").assertExists()
-        compose.onNodeWithTag("login_email").performScrollTo().performTextInput("demo@mygos.cl")
-        compose.onNodeWithTag("login_password").performScrollTo().performTextInput("incorrecta")
-        compose.onNodeWithTag("login_submit").performScrollTo().performClick()
-        compose.waitUntil(10000) {
-            compose.onAllNodesWithText("El correo o la contraseña no son correctos.").fetchSemanticsNodes().isNotEmpty()
-        }
-        compose.onNodeWithTag("login_password").performScrollTo().performTextInput("Mygos2026!")
-        compose.onNodeWithTag("login_submit").performScrollTo().performClick()
-        compose.waitUntil(10000) {
-            compose.onAllNodesWithText("Hola, Alex").fetchSemanticsNodes().isNotEmpty()
-        }
-        compose.activityRule.scenario.recreate()
-        compose.onNodeWithText("Hola, Alex").assertExists()
-        compose.onNodeWithTag("nav_perfil").performClick()
-        compose.onNodeWithText("demo@mygos.cl").assertExists()
-        compose.onNodeWithText("Cerrar sesión").performScrollTo().performClick()
-        compose.waitUntil(10000) {
-            compose.onAllNodesWithText("Iniciar sesión").fetchSemanticsNodes().isNotEmpty()
-        }
-        compose.onNodeWithText("Iniciar sesión").assertExists()
-        compose.onNodeWithTag("nav_inicio").performClick()
-        compose.onNodeWithText("Iniciar sesión").assertExists()
+    @Test fun tokenRestoreUsesRemoteProfileAndInvalidTokenClearsLocalSession() {
+        val repository = FakeRemoteAuthRepository()
+        val store = MemoryTokenStore(token = "restored-token")
+        val owner = ViewModelStore()
+        var lookedUpToken: String? = null
+        repository.lookup = { token -> lookedUpToken = token; remoteUser }
+        try {
+            val vm = onMain { ViewModelProvider(owner, LoginViewModel.Factory(repository, store))[LoginViewModel::class.java] }
+            awaitAuthState { !vm.uiState.restoringSession }
+            assertEquals("restored-token", lookedUpToken)
+            assertEquals(remoteUser, vm.uiState.user)
+        } finally { onMain { owner.clear() } }
+
+        val invalidStore = MemoryTokenStore(token = "expired-token")
+        val invalidOwner = ViewModelStore()
+        repository.lookup = { null }
+        try {
+            val vm = onMain { ViewModelProvider(invalidOwner, LoginViewModel.Factory(repository, invalidStore))[LoginViewModel::class.java] }
+            awaitAuthState { !vm.uiState.restoringSession }
+            assertNull(vm.uiState.user)
+            assertNull(invalidStore.token)
+            assertEquals(1, invalidStore.clearCount)
+        } finally { onMain { invalidOwner.clear() } }
+    }
+
+    @Test fun tokenWriteFailureNeverReportsSuccessfulLogin() {
+        val repository = FakeRemoteAuthRepository()
+        val store = MemoryTokenStore().apply { failSave = true }
+        val owner = ViewModelStore()
+        repository.login = { _, _ -> AuthSession(remoteUser, "test-token") }
+        try {
+            val vm = onMain { ViewModelProvider(owner, LoginViewModel.Factory(repository, store))[LoginViewModel::class.java] }
+            awaitAuthState { !vm.uiState.restoringSession }
+            onMain {
+                vm.updateEmail(remoteUser.email)
+                vm.updatePassword("test-only password")
+                vm.login()
+            }
+            awaitAuthState { !vm.uiState.loading && vm.uiState.error != null }
+            assertNull(vm.uiState.user)
+            assertEquals(LoginError.UNAVAILABLE, vm.uiState.error)
+            assertEquals("", vm.uiState.password)
+            assertNull(store.token)
+        } finally { onMain { owner.clear() } }
+    }
+
+    private fun <T> onMain(block: () -> T): T {
+        var result: T? = null
+        instrumentation.runOnMainSync { result = block() }
+        @Suppress("UNCHECKED_CAST")
+        return result as T
     }
 }

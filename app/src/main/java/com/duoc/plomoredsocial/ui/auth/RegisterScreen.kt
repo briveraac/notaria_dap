@@ -25,11 +25,12 @@ fun RegisterScreen(viewModel: RegisterViewModel, onLogin: () -> Unit) {
     MygosScreen {
         MygosBrand()
         MygosHeader("Crea tu espacio en Mygos", "Tus próximos encuentros empiezan con una cuenta.")
-        MygosNotice("La cuenta se guarda solo en este dispositivo. No hay sincronización, verificación de correo ni recuperación remota de contraseña.")
+        MygosNotice("Tu cuenta se crea en Xano. Mygos no guarda tu contraseña en este dispositivo.")
         if (viewModel.registeredEmail != null) {
             MygosCard {
                 Text("Cuenta creada", style = MaterialTheme.typography.titleLarge)
-                Text("Tu cuenta se guardó correctamente. Ya puedes iniciar sesión.")
+                Text("Xano confirmó tu cuenta. Ya puedes iniciar sesión.")
+                viewModel.error?.let { MygosNotice(it, isError = true) }
                 MygosPrimaryButton("Iniciar sesión", onLogin)
             }
         } else {

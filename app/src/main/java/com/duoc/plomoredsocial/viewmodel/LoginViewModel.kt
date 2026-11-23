@@ -9,7 +9,9 @@ import androidx.lifecycle.viewModelScope
 import com.duoc.plomoredsocial.model.AuthUser
 import com.duoc.plomoredsocial.model.LoginError
 import com.duoc.plomoredsocial.model.LoginValidator
+import com.duoc.plomoredsocial.model.RegisterValidator
 import com.duoc.plomoredsocial.repository.AuthRepository
+import com.duoc.plomoredsocial.repository.InvalidCredentialsException
 import com.duoc.plomoredsocial.repository.SessionStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -28,7 +30,7 @@ data class LoginUiState(
     val user: AuthUser? = null
 )
 
-// Restauramos el usuario al abrir; nunca persistimos la contraseña.
+// Restauramos el perfil remoto con el token; nunca persistimos la contraseña.
 class LoginViewModel(
     private val repository: AuthRepository,
     private val sessionStore: SessionStore
@@ -40,11 +42,13 @@ class LoginViewModel(
     init {
         viewModelScope.launch {
             try {
-                val id = sessionStore.readUserId()
-                val user = id?.let { repository.getUserById(it) }
-                if (id != null && user == null) sessionStore.clear()
+                val token = sessionStore.readToken()
+                val id = if (token == null) sessionStore.readUserId() else null
+                val user = if (token != null) repository.getUserByToken(token)
+                    else id?.let { repository.getUserById(it) }
+                if ((token != null || id != null) && user == null) sessionStore.clear()
                 uiState = LoginUiState(restoringSession = false, user = user)
-                if (user != null) observeAccount(user.id)
+                if (user != null && token == null) observeAccount(user.id)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (exception: Exception) {
@@ -72,18 +76,25 @@ class LoginViewModel(
         uiState = uiState.copy(emailError = emailError, passwordError = passwordError,
             error = null, validationAttempted = true)
         if (emailError != null || passwordError != null) return
-        val email = uiState.email.trim()
+        val email = RegisterValidator.normalizeEmail(uiState.email)
         val password = uiState.password // Los espacios pueden formar parte de una contraseña.
         uiState = uiState.copy(loading = true)
         viewModelScope.launch {
             try {
-                val user = repository.authenticate(email, password)
-                if (user != null) sessionStore.saveUserId(user.id)
+                val session = repository.authenticateSession(email, password)
+                val user = session?.user
+                if (session != null) {
+                    val token = session.token
+                    if (token != null) sessionStore.saveToken(token)
+                    else sessionStore.saveUserId(session.user.id)
+                }
                 uiState = uiState.copy(loading = false, user = user,
                     password = "", error = if (user == null) LoginError.INVALID_CREDENTIALS else null)
-                if (user != null) observeAccount(user.id)
+                if (user != null && session?.token == null) observeAccount(user.id)
             } catch (cancelled: CancellationException) {
                 throw cancelled
+            } catch (_: InvalidCredentialsException) {
+                uiState = uiState.copy(loading = false, password = "", error = LoginError.INVALID_CREDENTIALS)
             } catch (exception: Exception) {
                 uiState = uiState.copy(loading = false, password = "", error = LoginError.UNAVAILABLE)
             }
@@ -94,6 +105,12 @@ class LoginViewModel(
         if (!uiState.loading && !uiState.restoringSession) {
             uiState = LoginUiState(restoringSession = false, user = uiState.user)
         }
+    }
+
+    // Registro remoto ya persistió el token antes de entregar el perfil.
+    fun acceptRegisteredUser(user: AuthUser) {
+        accountObserver?.cancel()
+        uiState = LoginUiState(restoringSession = false, user = user)
     }
 
     // Ediciones y eliminaciones de Room actualizan también una sesión ya abierta.

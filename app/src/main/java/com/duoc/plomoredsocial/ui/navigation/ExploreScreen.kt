@@ -255,7 +255,7 @@ private fun RemoteActivityDetailDialog(
     }
 }
 
-/** Panel secundario de diagnóstico para comprobar los 7 Endpoints REST (Rúbrica). */
+/** Panel secundario de diagnóstico de actividades remotas. */
 @Composable
 private fun OnlineActivitiesSection(viewModel: XanoActivitiesViewModel) {
     val state = viewModel.uiState
@@ -266,12 +266,10 @@ private fun OnlineActivitiesSection(viewModel: XanoActivitiesViewModel) {
     var createCupos by rememberSaveable { mutableStateOf("5") }
     var updateId by rememberSaveable { mutableStateOf("") }
     var deleteId by rememberSaveable { mutableStateOf("") }
-    var loginEmail by rememberSaveable { mutableStateOf("") }
-    var loginPass by rememberSaveable { mutableStateOf("") }
 
     MygosCard(Modifier.testTag("xano_activities_section")) {
-        Text("Diagnóstico 7 Endpoints REST (Xano)", style = MaterialTheme.typography.titleLarge)
-        Text("Vista secundaria para verificar los 7 endpoints exigidos por la rúbrica.",
+        Text("Diagnóstico de actividades Xano", style = MaterialTheme.typography.titleLarge)
+        Text("Consulta y revisión de los endpoints de actividades.",
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
         state.actionMessage?.let { MygosNotice(it) }
@@ -344,24 +342,5 @@ private fun OnlineActivitiesSection(viewModel: XanoActivitiesViewModel) {
             Text("5. DELETE /actividades/{id} (Deshabilitado)")
         }
 
-        OutlinedTextField(value = loginEmail, onValueChange = { loginEmail = it },
-            label = { Text("Correo remoto") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = loginPass, onValueChange = { loginPass = it },
-            label = { Text("Contraseña remota") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-        OutlinedButton(
-            onClick = { viewModel.loginRemote(loginEmail, loginPass) },
-            enabled = loginEmail.isNotBlank() && loginPass.isNotBlank() && !state.actionInProgress,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("6. POST /auth/login")
-        }
-
-        OutlinedButton(
-            onClick = { viewModel.checkAuthMe() },
-            enabled = !state.actionInProgress,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("7. GET /auth/me")
-        }
     }
 }

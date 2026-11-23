@@ -2,6 +2,7 @@ package com.duoc.plomoredsocial
 
 import androidx.test.platform.app.InstrumentationRegistry
 import com.duoc.plomoredsocial.repository.LocalSessionStore
+import com.duoc.plomoredsocial.repository.XanoSessionStore
 import kotlinx.coroutines.runBlocking
 import org.junit.rules.TestRule
 import org.junit.runner.Description
@@ -14,11 +15,14 @@ class IsolatedSessionRule : TestRule {
             val context = InstrumentationRegistry.getInstrumentation().targetContext
             val store = LocalSessionStore(context.noBackupFilesDir)
             val previous = runBlocking { store.readUserId().also { store.clear() } }
+            val remote = XanoSessionStore(context.noBackupFilesDir)
+            val previousToken = runBlocking { remote.readToken().also { remote.clear() } }
             try {
                 base.evaluate()
             } finally {
                 runBlocking {
                     if (previous == null) store.clear() else store.saveUserId(previous)
+                    if (previousToken == null) remote.clear() else remote.saveToken(previousToken)
                 }
             }
         }

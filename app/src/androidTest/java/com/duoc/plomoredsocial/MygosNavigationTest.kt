@@ -2,6 +2,7 @@ package com.duoc.plomoredsocial
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -71,15 +72,14 @@ class MygosNavigationTest {
     }
 
     @Test
-    fun selectedSectionSurvivesActivityRecreation() {
+    fun selectedExploreSectionAndFilterSurviveActivityRecreation() {
         compose.onNodeWithTag("nav_actividades").assertDoesNotExist()
         compose.onNodeWithTag("nav_buscar").performClick()
-        compose.onNodeWithText("Ver mapa").performClick()
+        compose.onNodeWithTag("explore_commune").performScrollTo().performTextInput("Santiago")
         compose.activityRule.scenario.recreate()
-        compose.onNodeWithText("Cerrar mapa").performClick()
         compose.onNodeWithTag("nav_buscar").assertIsSelected()
-        compose.onNodeWithText("Ver mapa").performClick()
-        pressBack()
+        compose.onNodeWithTag("explore_commune").assertTextContains("Santiago")
+        compose.onNodeWithTag("nav_buscar").performClick()
         compose.onNodeWithTag("nav_buscar").assertIsSelected()
     }
 }

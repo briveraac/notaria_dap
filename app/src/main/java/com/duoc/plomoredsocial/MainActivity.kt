@@ -15,9 +15,10 @@ import com.duoc.plomoredsocial.ui.navigation.MygosApp
 import com.duoc.plomoredsocial.viewmodel.ContactViewModel
 import com.duoc.plomoredsocial.repository.ContactRepository
 import com.duoc.plomoredsocial.model.MygosDatabase
-import com.duoc.plomoredsocial.repository.RoomAuthRepository
+import com.duoc.plomoredsocial.repository.XanoAuthRepository
+import com.duoc.plomoredsocial.repository.XanoSessionStore
+import com.duoc.plomoredsocial.data.remote.xano.XanoApiClient
 import com.duoc.plomoredsocial.viewmodel.RegisterViewModel
-import com.duoc.plomoredsocial.repository.LocalSessionStore
 import com.duoc.plomoredsocial.viewmodel.LoginViewModel
 import com.duoc.plomoredsocial.viewmodel.HomeViewModel
 import com.duoc.plomoredsocial.repository.RoomActivityRepository
@@ -32,12 +33,15 @@ class MainActivity : ComponentActivity() {
         val contactViewModel = ViewModelProvider(
             this, ContactViewModel.Factory(repository)
         )[ContactViewModel::class.java]
-        val authRepository = RoomAuthRepository(MygosDatabase.getInstance(applicationContext), applicationContext.assets)
-        val registerViewModel = ViewModelProvider(this, RegisterViewModel.Factory(authRepository))[RegisterViewModel::class.java]
+        val authRepository = XanoAuthRepository(XanoApiClient.service)
+        val sessionStore = XanoSessionStore(applicationContext.noBackupFilesDir)
+        val registerViewModel = ViewModelProvider(
+            this, RegisterViewModel.Factory(authRepository, sessionStore)
+        )[RegisterViewModel::class.java]
         val loginViewModel = ViewModelProvider(
             this, LoginViewModel.Factory(
                 authRepository,
-                LocalSessionStore(applicationContext.noBackupFilesDir)
+                sessionStore
             )
         )[LoginViewModel::class.java]
         val homeViewModel = ViewModelProvider(

@@ -86,6 +86,14 @@ fun MygosApp(contactViewModel: ContactViewModel, loginViewModel: LoginViewModel,
             }
         }
     }
+    LaunchedEffect(registerViewModel.registeredUser) {
+        val registeredUser = registerViewModel.consumeRegisteredUser() ?: return@LaunchedEffect
+        loginViewModel.acceptRegisteredUser(registeredUser)
+        navController.navigate(MygosDestination.HOME.route) {
+            popUpTo(navController.graph.findStartDestination().id) { inclusive = true }
+            launchSingleTop = true
+        }
+    }
 
     if (loginState.restoringSession) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {

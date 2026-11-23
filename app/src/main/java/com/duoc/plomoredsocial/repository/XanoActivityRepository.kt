@@ -38,14 +38,17 @@ class XanoActivityRepository(private val service: XanoApiService) {
         return request { service.getActivity(id.trim()) }
     }
 
-    /** 3. POST /actividades (Validates data and restricts cupos to range 1..10). */
+    /** 3. POST /actividades (Validates data, schedule, coordinates and restricts cupos to range 1..10). */
     suspend fun createActivity(
         titulo: String,
         descripcion: String,
         comuna: String,
         ubicacion: String,
         organizador: String,
-        cupos: Int
+        cupos: Int,
+        fecha: String = "Próximamente",
+        latitude: Double? = null,
+        longitude: Double? = null
     ): XanoResult<XanoActivityDto> {
         val validCupos = cupos.coerceIn(1, 10)
         val body = JsonObject().apply {
@@ -55,6 +58,9 @@ class XanoActivityRepository(private val service: XanoApiService) {
             addProperty("ubicacion", ubicacion.trim())
             addProperty("organizador", organizador.trim())
             addProperty("cupos", validCupos)
+            addProperty("fecha", fecha.trim())
+            if (latitude != null) addProperty("latitude", latitude)
+            if (longitude != null) addProperty("longitude", longitude)
         }
         return when (val response = request { service.createActivity(body) }) {
             is XanoResult.Success -> {

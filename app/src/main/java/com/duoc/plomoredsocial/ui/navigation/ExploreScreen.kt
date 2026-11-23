@@ -75,7 +75,6 @@ internal fun ExploreScreen(
     }
 
     if (creating && user != null) {
-        // Reutiliza el ActivityForm original completo (con título, comuna, fecha, hora, descripción, punto de encuentro, mapa y GPS)
         ActivityForm(
             saving = remoteState.actionInProgress || awaitingPermission,
             failed = remoteState.actionError != null,
@@ -110,11 +109,7 @@ internal fun ExploreScreen(
 
     selectedRemoteActivity?.let { activity ->
         RemoteActivityDetailDialog(activity, user,
-            onDismiss = { selectedRemoteActivity = null },
-            onDelete = {
-                onlineActivities.deleteRemoteActivity(activity.id)
-                selectedRemoteActivity = null
-            }
+            onDismiss = { selectedRemoteActivity = null }
         )
     }
 
@@ -238,8 +233,7 @@ private fun XanoActivityCard(activity: XanoActivityDto, onClick: () -> Unit) {
 private fun RemoteActivityDetailDialog(
     activity: XanoActivityDto,
     user: AuthUser?,
-    onDismiss: () -> Unit,
-    onDelete: () -> Unit
+    onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxSize().safeDrawingPadding()) {
@@ -254,16 +248,8 @@ private fun RemoteActivityDetailDialog(
                     Text(activity.description)
                 }
                 MygosMetric("Cupos: ${activity.capacity}/10 (Rango 1–10)")
-                if (user != null) {
-                    Spacer(Modifier.height(16.dp))
-                    OutlinedButton(
-                        onClick = onDelete,
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Eliminar actividad (Autorizado)")
-                    }
-                }
+                Spacer(Modifier.height(16.dp))
+                MygosNotice("La edición y eliminación pública están bloqueadas en la interfaz de usuario hasta que Xano implemente control de propiedad y autorización server-side (HTTP 401/403).")
             }
         }
     }

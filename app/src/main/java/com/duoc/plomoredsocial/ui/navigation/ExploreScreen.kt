@@ -52,7 +52,7 @@ internal fun ExploreScreen(
     val remoteState = onlineActivities.uiState
     val listState = rememberLazyListState()
 
-    var selectedRemoteActivity by rememberSaveable { mutableStateOf<XanoActivityDto?>(null) }
+    var selectedRemoteId by rememberSaveable { mutableStateOf<String?>(null) }
     var creating by rememberSaveable { mutableStateOf(false) }
     var accessRequested by rememberSaveable { mutableStateOf(false) }
     var filterCommune by rememberSaveable { mutableStateOf("") }
@@ -62,6 +62,7 @@ internal fun ExploreScreen(
     val filteredActivities = if (filterCommune.isBlank()) rawList else rawList.filter {
         it.commune.contains(filterCommune, ignoreCase = true) || it.title.contains(filterCommune, ignoreCase = true)
     }
+    val selectedRemoteActivity = rawList.firstOrNull { it.id == selectedRemoteId }
 
     val context = LocalContext.current
     val notifier = remember(context) { ActivityCreatedNotifier(context.applicationContext) }
@@ -108,8 +109,8 @@ internal fun ExploreScreen(
     }
 
     selectedRemoteActivity?.let { activity ->
-        RemoteActivityDetailDialog(activity, user,
-            onDismiss = { selectedRemoteActivity = null }
+        RemoteActivityDetailDialog(activity,
+            onDismiss = { selectedRemoteId = null }
         )
     }
 
@@ -183,7 +184,7 @@ internal fun ExploreScreen(
             // Catálogo unificado de actividades provenientes de Xano en tarjetas estructuradas Material 3
             items(filteredActivities, key = { it.id }, contentType = { "xano_activity" }) { activity ->
                 XanoActivityCard(activity) {
-                    selectedRemoteActivity = activity
+                    selectedRemoteId = activity.id
                 }
             }
 
@@ -222,7 +223,7 @@ private fun XanoActivityCard(activity: XanoActivityDto, onClick: () -> Unit) {
         Text(activity.commune, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
         Text("Fecha del evento: ${activity.schedule}", style = MaterialTheme.typography.bodyMedium)
         Text(activity.meetingPoint, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        MygosMetric("Cupos disponibles: ${activity.capacity}/10")
+        MygosMetric("Capacidad: ${activity.capacity} personas")
         OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
             Text("Ver detalle completo")
         }
@@ -232,7 +233,6 @@ private fun XanoActivityCard(activity: XanoActivityDto, onClick: () -> Unit) {
 @Composable
 private fun RemoteActivityDetailDialog(
     activity: XanoActivityDto,
-    user: AuthUser?,
     onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -247,9 +247,9 @@ private fun RemoteActivityDetailDialog(
                     Text("Descripción", style = MaterialTheme.typography.titleMedium)
                     Text(activity.description)
                 }
-                MygosMetric("Cupos: ${activity.capacity}/10 (Rango 1–10)")
+                MygosMetric("Capacidad: ${activity.capacity} personas (Rango 1–10)")
                 Spacer(Modifier.height(16.dp))
-                MygosNotice("La edición y eliminación pública están bloqueadas en la interfaz de usuario hasta que Xano implemente control de propiedad y autorización server-side (HTTP 401/403).")
+                MygosNotice("La edición (PATCH) y eliminación (DELETE) están bloqueadas en la interfaz mientras Xano no valide la autorización y propiedad del propietario del registro (HTTP 401/403).", isError = true)
             }
         }
     }
@@ -265,10 +265,9 @@ private fun OnlineActivitiesSection(viewModel: XanoActivitiesViewModel) {
     var createComuna by rememberSaveable { mutableStateOf("") }
     var createCupos by rememberSaveable { mutableStateOf("5") }
     var updateId by rememberSaveable { mutableStateOf("") }
-    var updateCupos by rememberSaveable { mutableStateOf("8") }
     var deleteId by rememberSaveable { mutableStateOf("") }
-    var loginEmail by rememberSaveable { mutableStateOf("demo@mygos.cl") }
-    var loginPass by rememberSaveable { mutableStateOf("Mygos2026!") }
+    var loginEmail by rememberSaveable { mutableStateOf("") }
+    var loginPass by rememberSaveable { mutableStateOf("") }
 
     MygosCard(Modifier.testTag("xano_activities_section")) {
         Text("Diagnóstico 7 Endpoints REST (Xano)", style = MaterialTheme.typography.titleLarge)
@@ -325,27 +324,33 @@ private fun OnlineActivitiesSection(viewModel: XanoActivitiesViewModel) {
 
         OutlinedTextField(value = updateId, onValueChange = { updateId = it },
             label = { Text("ID para PATCH") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        MygosNotice("PATCH /actividades/{id} está deshabilitado en UI hasta que Xano valide autorización por propietario (401/403).")
         OutlinedButton(
-            onClick = { viewModel.updateRemoteActivity(updateId, updateCupos.toIntOrNull()?.coerceIn(1, 10) ?: 8) },
-            enabled = updateId.isNotBlank() && !state.actionInProgress,
+            onClick = { /* Deshabilitado por seguridad */ },
+            enabled = false,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("4. PATCH /actividades/{id}")
+            Text("4. PATCH /actividades/{id} (Deshabilitado)")
         }
 
         OutlinedTextField(value = deleteId, onValueChange = { deleteId = it },
             label = { Text("ID para DELETE") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        MygosNotice("DELETE /actividades/{id} está deshabilitado en UI hasta que Xano valide autorización por propietario (401/403).")
         OutlinedButton(
-            onClick = { viewModel.deleteRemoteActivity(deleteId) },
-            enabled = deleteId.isNotBlank() && !state.actionInProgress,
+            onClick = { /* Deshabilitado por seguridad */ },
+            enabled = false,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("5. DELETE /actividades/{id}")
+            Text("5. DELETE /actividades/{id} (Deshabilitado)")
         }
 
+        OutlinedTextField(value = loginEmail, onValueChange = { loginEmail = it },
+            label = { Text("Correo remoto") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = loginPass, onValueChange = { loginPass = it },
+            label = { Text("Contraseña remota") }, singleLine = true, modifier = Modifier.fillMaxWidth())
         OutlinedButton(
             onClick = { viewModel.loginRemote(loginEmail, loginPass) },
-            enabled = !state.actionInProgress,
+            enabled = loginEmail.isNotBlank() && loginPass.isNotBlank() && !state.actionInProgress,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("6. POST /auth/login")

@@ -152,17 +152,6 @@ El APK resultante se ubica en:
 
 **Resultado esperado:** `Verifies`, `Verified using v2 scheme: true`, algoritmo RSA 3072 bits.
 
----
-
-Instalación y Prueba del APK
-
-Con un emulador Pixel 7 o dispositivo conectado vía ADB:
-
-```powershell
-& 'C:\Users\Juseppe\AppData\Local\Android\Sdk\platform-tools\adb.exe' install -r 'app/build/outputs/apk/release/app-release.apk'
-```
-
----
 
  Estructura Técnica del Proyecto
 

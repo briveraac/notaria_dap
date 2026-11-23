@@ -244,7 +244,7 @@ fun ActivityDetail(activity: ActivityEntity, user: AuthUser?, viewModel: Activit
 
 // Estado del borrador recuperable; las reglas se comparten con el ViewModel de guardado.
 @Composable
-private fun ActivityForm(
+internal fun ActivityForm(
     saving: Boolean, failed: Boolean, onDismiss: () -> Unit,
     onSave: (String, String, String, String, String, LatLng?, Int) -> Unit
 ) {

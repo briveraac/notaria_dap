@@ -78,17 +78,22 @@ class XanoActivitiesViewModel(private val repository: XanoActivityRepository) : 
         comuna: String,
         ubicacion: String,
         organizador: String,
-        cupos: Int
+        cupos: Int,
+        fecha: String = "Próximamente",
+        latitude: Double? = null,
+        longitude: Double? = null,
+        onSuccess: (XanoActivityDto) -> Unit = {}
     ) {
         if (uiState.actionInProgress) return
         val validCupos = cupos.coerceIn(1, 10)
         uiState = uiState.copy(actionInProgress = true, actionMessage = null, actionError = null)
         viewModelScope.launch {
             try {
-                uiState = when (val result = repository.createActivity(titulo, descripcion, comuna, ubicacion, organizador, validCupos)) {
+                uiState = when (val result = repository.createActivity(titulo, descripcion, comuna, ubicacion, organizador, validCupos, fecha, latitude, longitude)) {
                     is XanoResult.Success -> {
                         refresh()
-                        uiState.copy(actionInProgress = false, actionMessage = "Actividad creada en Xano (ID ${result.value.raw.get("id")?.asString ?: "OK"}). Cupos restringidos a $validCupos (rango 1-10).")
+                        onSuccess(result.value)
+                        uiState.copy(actionInProgress = false, actionMessage = "Actividad creada en Xano.")
                     }
                     is XanoResult.HttpFailure -> uiState.copy(actionInProgress = false, actionError = httpMessage(result.statusCode))
                     XanoResult.EmptyBody -> uiState.copy(actionInProgress = false, actionError = "Respuesta vacía al crear actividad.")

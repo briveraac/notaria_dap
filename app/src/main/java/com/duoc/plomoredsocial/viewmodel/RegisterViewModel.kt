@@ -11,6 +11,7 @@ import com.duoc.plomoredsocial.model.RegisterValidator
 import com.duoc.plomoredsocial.repository.AccountCreatedSessionUnavailableException
 import com.duoc.plomoredsocial.repository.AuthRepository
 import com.duoc.plomoredsocial.repository.AuthNetworkException
+import com.duoc.plomoredsocial.repository.AuthServerException
 import com.duoc.plomoredsocial.repository.DuplicateEmailException
 import com.duoc.plomoredsocial.repository.SessionStore
 import kotlinx.coroutines.CancellationException
@@ -76,6 +77,8 @@ class RegisterViewModel(
                 registeredEmail = submittedEmail
                 clearSensitive()
                 error = "Tu cuenta se creó en Xano, pero no pudimos confirmar la sesión. Inicia sesión."
+            } catch (serverError: AuthServerException) {
+                error = "El servidor Xano respondió con un error (HTTP ${serverError.statusCode}). Revisa la función de registro en Xano."
             } catch (_: AuthNetworkException) {
                 error = "No pudimos conectar con Xano. Revisa tu conexión e intenta nuevamente."
             } catch (_: Exception) {

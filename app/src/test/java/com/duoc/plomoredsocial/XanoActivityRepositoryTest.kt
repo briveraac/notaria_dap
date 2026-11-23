@@ -3,6 +3,7 @@ package com.duoc.plomoredsocial
 import com.duoc.plomoredsocial.data.remote.xano.XanoApiClient
 import com.duoc.plomoredsocial.repository.XanoActivityRepository
 import com.duoc.plomoredsocial.repository.XanoResult
+import com.google.gson.JsonObject
 import kotlinx.coroutines.runBlocking
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
@@ -33,7 +34,7 @@ class XanoActivityRepositoryTest {
     }
 
     @Test
-    fun getActivitiesParsesEmptyArrayAndUsesConfirmedPath() = runBlocking {
+    fun endpoint1_getActivitiesParsesEmptyArrayAndUsesConfirmedPath() = runBlocking {
         server.enqueue(jsonResponse("[]"))
 
         val result = repository.getActivities()
@@ -46,7 +47,6 @@ class XanoActivityRepositoryTest {
 
     @Test
     fun getActivitiesPreservesUnknownObjectFieldsWithoutMappingAssumptions() = runBlocking {
-        // This is transport-fixture JSON, not a claim about Xano's field schema.
         server.enqueue(jsonResponse("[{\"fixture_marker\":17,\"nested\":{\"ok\":true}}]"))
 
         val result = repository.getActivities()
@@ -58,7 +58,7 @@ class XanoActivityRepositoryTest {
     }
 
     @Test
-    fun getActivityUsesConfirmedDetailRouteAndEncodesTheIdentifier() = runBlocking {
+    fun endpoint2_getActivityUsesConfirmedDetailRouteAndEncodesTheIdentifier() = runBlocking {
         server.enqueue(jsonResponse("{\"fixture_marker\":\"ok\"}"))
 
         val result = repository.getActivity("id with space")
@@ -67,6 +67,70 @@ class XanoActivityRepositoryTest {
         val request = server.takeRequest()
         assertEquals("GET", request.method)
         assertEquals("/api:6kDB2GLk/actividades/id%20with%20space", request.url.encodedPath)
+    }
+
+    @Test
+    fun endpoint3_searchActivitiesByComunaSendsQueryParam() = runBlocking {
+        server.enqueue(jsonResponse("[{\"id\":2,\"comuna\":\"Providencia\"}]"))
+
+        val result = repository.searchActivitiesByComuna("Providencia")
+
+        assertTrue(result is XanoResult.Success)
+        val request = server.takeRequest()
+        assertEquals("GET", request.method)
+        assertEquals("comuna=Providencia", request.url.query)
+    }
+
+    @Test
+    fun endpoint4_createActivitySendsPostWithBody() = runBlocking {
+        server.enqueue(jsonResponse("{\"id\":10,\"titulo\":\"Nuevo Evento\"}"))
+
+        val result = repository.createActivity("Nuevo Evento", "Desc", "Santiago", "Plaza", "Org", 20)
+
+        assertTrue(result is XanoResult.Success)
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/api:6kDB2GLk/actividades", request.url.encodedPath)
+        assertTrue(request.body?.utf8()?.contains("Nuevo Evento") == true)
+    }
+
+    @Test
+    fun endpoint5_updateActivitySendsPatchRequest() = runBlocking {
+        server.enqueue(jsonResponse("{\"id\":10,\"cupos\":25}"))
+
+        val fields = JsonObject().apply { addProperty("cupos", 25) }
+        val result = repository.updateActivity("10", fields)
+
+        assertTrue(result is XanoResult.Success)
+        val request = server.takeRequest()
+        assertEquals("PATCH", request.method)
+        assertEquals("/api:6kDB2GLk/actividades/10", request.url.encodedPath)
+        assertTrue(request.body?.utf8()?.contains("25") == true)
+    }
+
+    @Test
+    fun endpoint6_deleteActivitySendsDeleteRequest() = runBlocking {
+        server.enqueue(MockResponse.Builder().code(200).body("null").build())
+
+        val result = repository.deleteActivity("10")
+
+        assertTrue(result is XanoResult.Success || result is XanoResult.EmptyBody)
+        val request = server.takeRequest()
+        assertEquals("DELETE", request.method)
+        assertEquals("/api:6kDB2GLk/actividades/10", request.url.encodedPath)
+    }
+
+    @Test
+    fun endpoint7_getAuthMeSendsHeaderAndQueryRoute() = runBlocking {
+        server.enqueue(MockResponse.Builder().code(401).body("{\"message\":\"Unauthorized\"}").build())
+
+        val result = repository.getAuthMe()
+
+        assertEquals(XanoResult.HttpFailure(401), result)
+        val request = server.takeRequest()
+        assertEquals("GET", request.method)
+        assertEquals("/api:6kDB2GLk/auth/me", request.url.encodedPath)
+        assertEquals("Bearer guest", request.headers["Authorization"])
     }
 
     @Test

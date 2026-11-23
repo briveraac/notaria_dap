@@ -149,16 +149,27 @@ internal fun ExploreScreen(
 private fun OnlineActivitiesSection(viewModel: XanoActivitiesViewModel) {
     val state = viewModel.uiState
     var detailId by rememberSaveable { mutableStateOf("") }
+    var searchComuna by rememberSaveable { mutableStateOf("") }
+    var createTitulo by rememberSaveable { mutableStateOf("") }
+    var createComuna by rememberSaveable { mutableStateOf("") }
+    var createCupos by rememberSaveable { mutableStateOf("10") }
+    var updateId by rememberSaveable { mutableStateOf("") }
+    var updateCupos by rememberSaveable { mutableStateOf("20") }
+    var deleteId by rememberSaveable { mutableStateOf("") }
 
     MygosCard(Modifier.testTag("xano_activities_section")) {
-        Text("Actividades en línea", style = MaterialTheme.typography.titleLarge)
-        Text("Fuente: Xano. Este catálogo es independiente de las actividades locales de Room.",
+        Text("Actividades en línea (Xano API)", style = MaterialTheme.typography.titleLarge)
+        Text("Fuente: Xano. 7 Endpoints REST consumidos independientemente de Room.",
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-        if (state.loading) {
+        // Notification / Status messages from Xano actions
+        state.actionMessage?.let { MygosNotice(it) }
+        state.actionError?.let { MygosNotice(it, isError = true) }
+
+        if (state.loading || state.actionInProgress) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                Text("Consultando Xano…")
+                Text("Conectando con Xano…")
             }
         }
         state.error?.let { MygosNotice(it, isError = true) }
@@ -175,14 +186,26 @@ private fun OnlineActivitiesSection(viewModel: XanoActivitiesViewModel) {
                     }
                 }
         }
+
+        // Endpoint 1: GET /actividades
         OutlinedButton(onClick = viewModel::refresh, enabled = !state.loading,
             modifier = Modifier.fillMaxWidth().testTag("xano_retry")) {
-            Text("Actualizar actividades en línea")
+            Text("1. Actualizar catálogo remoto (GET /actividades)")
+        }
+
+        // Endpoint 3: GET /actividades?comuna={comuna}
+        OutlinedTextField(value = searchComuna, onValueChange = { searchComuna = it },
+            label = { Text("Filtrar Xano por comuna") }, singleLine = true,
+            modifier = Modifier.fillMaxWidth().testTag("xano_search_comuna"))
+        OutlinedButton(onClick = { viewModel.searchByComuna(searchComuna) },
+            enabled = !state.loading, modifier = Modifier.fillMaxWidth()) {
+            Text("3. Buscar por comuna (GET /actividades?comuna)")
         }
 
         HorizontalDivider()
-        Text("Consultar detalle remoto", style = MaterialTheme.typography.titleMedium)
-        Text("Ingresa el ID de Xano. No se usa el ID local de Room.", style = MaterialTheme.typography.bodySmall)
+
+        // Endpoint 2: GET /actividades/{actividades_id}
+        Text("Consultar detalle remoto (GET /actividades/{id})", style = MaterialTheme.typography.titleMedium)
         OutlinedTextField(value = detailId, onValueChange = { detailId = it },
             label = { Text("ID de Xano") }, singleLine = true,
             modifier = Modifier.fillMaxWidth().testTag("xano_detail_id"))
@@ -190,12 +213,75 @@ private fun OnlineActivitiesSection(viewModel: XanoActivitiesViewModel) {
             enabled = detailId.isNotBlank() && !state.detailLoading,
             modifier = Modifier.fillMaxWidth().testTag("xano_detail_load")) {
             if (state.detailLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp))
-            else Text("Consultar detalle")
+            else Text("2. Consultar detalle (GET /actividades/{id})")
         }
         state.detailError?.let { MygosNotice(it, isError = true) }
         state.detail?.let {
             Text(it.redactedForDisplay().toString(), style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.testTag("xano_activity_detail"))
+        }
+
+        HorizontalDivider()
+
+        // Endpoint 4: POST /actividades
+        Text("Crear actividad remota (POST /actividades)", style = MaterialTheme.typography.titleMedium)
+        OutlinedTextField(value = createTitulo, onValueChange = { createTitulo = it },
+            label = { Text("Título remoto") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = createComuna, onValueChange = { createComuna = it },
+            label = { Text("Comuna remota") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = createCupos, onValueChange = { createCupos = it },
+            label = { Text("Cupos") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedButton(
+            onClick = {
+                val cuposInt = createCupos.toIntOrNull() ?: 10
+                viewModel.createRemoteActivity(createTitulo.ifBlank { "Evento Xano" }, "Descripción remota", createComuna.ifBlank { "Santiago" }, "Ubicación remota", "Organizador Mygos", cuposInt)
+            },
+            enabled = !state.actionInProgress,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("4. Crear en Xano (POST /actividades)")
+        }
+
+        HorizontalDivider()
+
+        // Endpoint 5: PATCH /actividades/{id}
+        Text("Actualizar actividad remota (PATCH /actividades/{id})", style = MaterialTheme.typography.titleMedium)
+        OutlinedTextField(value = updateId, onValueChange = { updateId = it },
+            label = { Text("ID a actualizar") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = updateCupos, onValueChange = { updateCupos = it },
+            label = { Text("Nuevos cupos") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedButton(
+            onClick = { viewModel.updateRemoteActivity(updateId, updateCupos.toIntOrNull() ?: 20) },
+            enabled = updateId.isNotBlank() && !state.actionInProgress,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("5. Actualizar en Xano (PATCH /actividades/{id})")
+        }
+
+        HorizontalDivider()
+
+        // Endpoint 6: DELETE /actividades/{id}
+        Text("Eliminar actividad remota (DELETE /actividades/{id})", style = MaterialTheme.typography.titleMedium)
+        OutlinedTextField(value = deleteId, onValueChange = { deleteId = it },
+            label = { Text("ID a eliminar") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedButton(
+            onClick = { viewModel.deleteRemoteActivity(deleteId) },
+            enabled = deleteId.isNotBlank() && !state.actionInProgress,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("6. Eliminar en Xano (DELETE /actividades/{id})")
+        }
+
+        HorizontalDivider()
+
+        // Endpoint 7: GET /auth/me
+        Text("Verificar Auth Endpoint (GET /auth/me)", style = MaterialTheme.typography.titleMedium)
+        OutlinedButton(
+            onClick = { viewModel.checkAuthMe() },
+            enabled = !state.actionInProgress,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("7. Verificar Auth Remote (GET /auth/me)")
         }
     }
 }

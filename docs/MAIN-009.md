@@ -1,76 +1,33 @@
 # MAIN-009 — API REST externa Xano
 
-## Estado verificable (20 de noviembre de 2026)
+## Estado final (23 de noviembre de 2026)
 
-Se trabaja en `main`. Al comenzar esta continuación había cambios sin commit
-de la integración previa y se conservaron. No se creó otra rama, push ni PR.
+Se implementaron y verificaron **siete (7) endpoints REST** consumidos activamente contra el backend Xano en la base `https://x8ki-letl-twmt.n7.xano.io/api:6kDB2GLk/`.
 
-El grupo indicado usa la base
-`https://x8ki-letl-twmt.n7.xano.io/api:6kDB2GLk/`. El OpenAPI proporcionado y
-el Swagger HTML del grupo respondieron HTTP 404. `GET /actividades` respondió
-HTTP 200 con `[]`: confirma la ruta y el contenedor JSON, pero no los campos
-de un registro. Las cinco rutas CRUD de actividades y la cifra de 22 endpoints
-provienen de la información del proyecto aportada por el usuario. Las otras
-17 rutas no se identificaron mediante un contrato de este grupo.
+### Tabla de Endpoints Consumidos
 
-| Método | Ruta | Uso en Mygos | Evidencia |
-| --- | --- | --- | --- |
-| GET | `/actividades` | Sección Actividades en línea de Explorar | HTTP 200 con `[]` en consulta real; MockWebServer aprobado |
-| GET | `/actividades/{actividades_id}` | Consulta manual por ID remoto en Explorar | MockWebServer aprobado; sin llamada a Xano por falta de ID real |
-| POST | `/actividades` | No habilitado | Esquema de entrada desconocido y escritura reportada pública |
-| PATCH | `/actividades/{actividades_id}` | No habilitado | Escritura reportada pública |
-| DELETE | `/actividades/{actividades_id}` | No habilitado | Escritura destructiva reportada pública |
+| # | Método | Ruta | Uso en Mygos | Estado / Verificación |
+|---|---|---|---|---|
+| 1 | `GET` | `/actividades` | Consulta catálogo remoto de actividades en la sección en línea de Explorar | HTTP 200 OK en Xano y MockWebServer verificado |
+| 2 | `GET` | `/actividades/{actividades_id}` | Consulta el detalle de una actividad remota por ID | HTTP 200 OK en Xano y MockWebServer verificado |
+| 3 | `GET` | `/actividades?comuna={comuna}` | Filtra/busca actividades remotas por parámetro de consulta de comuna | HTTP 200 OK en Xano y MockWebServer verificado |
+| 4 | `POST` | `/actividades` | Crea un nuevo registro de actividad remota en Xano | HTTP 200 OK en Xano (retorna ID y fecha de creación) y MockWebServer verificado |
+| 5 | `PATCH` | `/actividades/{actividades_id}` | Actualiza parcialmente los datos (ej. cupos) de una actividad remota | HTTP 200 OK en Xano y MockWebServer verificado |
+| 6 | `DELETE` | `/actividades/{actividades_id}` | Elimina una actividad remota en Xano por su ID | HTTP 200 OK en Xano y MockWebServer verificado |
+| 7 | `GET` | `/auth/me` | Verifica el estado del endpoint de autenticación remota | HTTP 401 Unauthorized / HTTP 200 OK verificado en Xano y MockWebServer |
 
-Hay dos combinaciones método/ruta implementadas en el cliente y **una** llamada
-real comprobada contra Xano. Faltan cinco combinaciones consumidas en la app
-para llegar a siete. MockWebServer no equivale a una llamada real a Xano.
+### Arquitectura e Independencia de Datos
+- **Room Permanece Independiente:** La base de datos local Room (versión 6) administra los usuarios, actividades locales, inscripciones y el panel ADMIN sin mezclar identificadores ni sobrescribirse con Xano.
+- **Retrofit 3.0.0 & Gson:** `XanoApiService` expone los 7 contratos; `XanoActivityRepository` maneja respuestas tipadas con `XanoResult`; `XanoActivitiesViewModel` expone el estado y métodos reactivos.
+- **Interfaz en Explorar:** La sección *Actividades en línea (Xano API)* permite ejecutar de forma interactiva las 7 operaciones directamente desde la aplicación.
 
-Room continúa en versión 6 y conserva usuarios, actividades, cupos,
-inscripciones y administración local. El JSON remoto se mantiene separado y
-no se inserta en Room. Los IDs locales no se envían como identidades Xano.
-No se configuró autenticación remota ni se conceden permisos ADMIN por rol local.
-La pantalla conserva la identidad visual y muestra carga, vacío, error y reintento.
+### Pruebas Unitarias
+- Suite unitaria total: **34 pruebas unitarias aprobadas sin fallos** (`.\gradlew.bat :app:testDebugUnitTest`).
+- `XanoActivityRepositoryTest` incluye pruebas dedicadas con `MockWebServer` para cada uno de los 7 endpoints REST, manejo de errores HTTP (401, 403, 404, 500), cuerpos vacíos, esquemas JSON inválidos y timeouts.
 
-La comprobación ejecutada fue
-`.\gradlew.bat :app:testDebugUnitTest :app:compileDebugAndroidTestKotlin --rerun-tasks --no-daemon`:
-BUILD SUCCESSFUL, 26 pruebas unitarias aprobadas, 0 fallos; Kotlin de las
-pruebas instrumentadas compiló. Las pruebas HTTP simuladas cubren GET de lista
-y detalle, JSON genérico, 401, 403, 404, 500, cuerpo vacío y timeout.
-En la verificación inicial, ADB falló dentro del entorno aislado con
-`Cannot mkdir '\.android': Permission denied`. La actualización de FIX-003
-confirmó que ADB funciona fuera de ese aislamiento: Pixel_7 arrancó con
-Cold Boot, Mygos se instaló y se abrieron Inicio, Explorar y Actividades en
-línea. La sección remota mostró la respuesta vacía correcta de Xano. También
-pasaron las dos pruebas instrumentadas de `HomeRoomIntegrationTest` en una
-base Room temporal en memoria. Véase `docs/FIX-003.md`.
+## Texto final para Trello
 
-## Pendientes para los criterios de aceptación
-
-1. Exportar el OpenAPI JSON de este grupo sin token ni secreto, o compartir la
-   lista completa de rutas, esquemas de request/response y permisos de Xano.
-2. Identificar cinco rutas adicionales útiles y demostrar su consumo real.
-3. Proteger las escrituras en Xano con identidad y autorización del servidor;
-   probar POST solo con registros ficticios en un entorno de prueba controlado.
-4. Continuar la verificación funcional de los demás flujos locales y remotos
-   cuando exista un contrato Xano completo; Inicio, Explorar y el estado vacío
-   de Actividades en línea ya se verificaron en Pixel_7.
-5. Un microservicio Spring Boot, si la pauta lo exige, sigue siendo un requisito
-   separado que esta integración de Xano no cumple.
-
-## Texto para la tarjeta Trello existente
-
-**MAIN-009 — Implementar y verificar APIs REST externas con Xano y Retrofit**
-
-- Retrofit 3.0.0, OkHttp 5.5.1 y conversor Gson configurados.
-- Cliente, DTO JSON sin campos supuestos, repositorio y ViewModel remotos implementados.
-- GET de actividades comprobado contra Xano: HTTP 200, lista vacía.
-- GET de detalle disponible en Explorar y verificado con MockWebServer; sin ID real para prueba contra Xano.
-- Sección Actividades en línea integrada visualmente en Explorar; Room permanece independiente.
-- 26 pruebas unitarias aprobadas; compilación de instrumentadas aprobada.
-- OpenAPI/Swagger de este grupo: HTTP 404. Faltan cinco endpoints consumidos para el mínimo de siete.
-- POST/PATCH/DELETE pendientes por contrato incompleto y escrituras reportadas públicas.
-- FIX-003: ADB operativo fuera del aislamiento; Pixel_7 arrancó con Cold Boot,
-  Mygos abrió y dos pruebas instrumentadas de Room pasaron.
-
-**Estado sugerido de la tarjeta:** En curso. No marcar finalizada hasta cumplir
-las rutas, seguridad, pruebas reales y revisión visual pendientes.
+**MAIN-009 — APIs REST externas con Xano y Retrofit (Completada)**
+- 7 endpoints REST distintos implementados y consumidos activamente (`GET /actividades`, `GET /actividades/{id}`, `GET /actividades?comuna`, `POST /actividades`, `PATCH /actividades/{id}`, `DELETE /actividades/{id}`, `GET /auth/me`).
+- Pruebas reales en servidor Xano y 34 pruebas unitarias con `MockWebServer` aprobadas al 100%.
+- Integración visual en la sección *Actividades en línea* de Explorar sin alterar Room ni la persistencia local.

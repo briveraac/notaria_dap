@@ -12,6 +12,17 @@ val localConfig = Properties().apply {
 }
 val mapsApiKey = providers.environmentVariable("MAPS_API_KEY")
     .orElse(localConfig.getProperty("MAPS_API_KEY", "")).get()
+val releaseStorePath = localConfig.getProperty("RELEASE_STORE_FILE")
+val releaseStorePassword = localConfig.getProperty("RELEASE_STORE_PASSWORD")
+val releaseKeyAlias = localConfig.getProperty("RELEASE_KEY_ALIAS")
+val releaseKeyPassword = localConfig.getProperty("RELEASE_KEY_PASSWORD")
+val releaseSigningValues = listOf(
+    releaseStorePath, releaseStorePassword, releaseKeyAlias, releaseKeyPassword,
+)
+val releaseSigningConfigured = releaseSigningValues.all { !it.isNullOrBlank() }
+if (releaseSigningValues.any { !it.isNullOrBlank() } && !releaseSigningConfigured) {
+    throw GradleException("Incomplete release signing configuration in local.properties")
+}
 
 android {
     namespace = "com.duoc.plomoredsocial"
@@ -31,8 +42,22 @@ android {
         buildConfigField("boolean", "MAPS_CONFIGURED", mapsApiKey.isNotBlank().toString())
     }
 
+    signingConfigs {
+        if (releaseSigningConfigured) {
+            create("release") {
+                storeFile = rootProject.file(releaseStorePath!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (releaseSigningConfigured) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             optimization {
                 enable = false
             }

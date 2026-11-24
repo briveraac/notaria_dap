@@ -4,7 +4,7 @@ Aplicación móvil Android nativa desarrollada en Kotlin para la exploración, c
 
 ---
 
-## 📋 1. Funcionalidades Principales
+1. Funcionalidades Principales
 
 - **Autenticación y Sesión:** Autenticación remota en Xano con almacenamiento seguro del token cifrado mediante AES-GCM en el KeyStore de Android.
 - **Catálogo Unificado (Xano como Fuente Central):** Las actividades comunitarias compartidas tienen a Xano como fuente principal de verdad (`GET /actividades`, `POST /actividades`, `PATCH /actividades`, `DELETE /actividades`).
@@ -13,7 +13,7 @@ Aplicación móvil Android nativa desarrollada en Kotlin para la exploración, c
 
 ---
 
-## 🏗️ 2. Arquitectura y Tecnologías
+2. Arquitectura y Tecnologías
 
 - **Lenguaje:** Kotlin / Java JDK (JBR Android Studio)
 - **UI Framework:** Jetpack Compose + Material 3 (Typography Plus Jakarta Sans)
@@ -24,7 +24,7 @@ Aplicación móvil Android nativa desarrollada en Kotlin para la exploración, c
 
 ---
 
-## 🎯 3. Requisitos de la Entrega y Estado Real
+3. Requisitos de la Entrega y Estado Real
 
 | Requisito | Estado Real | Evidencia y Verificación |
 |---|---|---|
@@ -38,7 +38,7 @@ Aplicación móvil Android nativa desarrollada en Kotlin para la exploración, c
 
 ---
 
-## 🌐 4. Endpoints REST de Xano
+--4. Endpoints REST de Xano
 
 1. `GET /actividades`
 2. `GET /actividades/{actividades_id}`
@@ -51,7 +51,7 @@ Aplicación móvil Android nativa desarrollada en Kotlin para la exploración, c
 
 ---
 
-## 📦 5. Compilación y Firma
+--5. Compilación y Firma
 
 ```powershell
 # Generar APK release firmado
@@ -63,6 +63,6 @@ apksigner verify --verbose --print-certs app/build/outputs/apk/release/app-relea
 
 ---
 
-## ⚠️ 6. Limitaciones y Pendientes
+--6. Limitaciones y Pendientes
 
 - **Autorización Server-Side:** Las operaciones `PATCH` y `DELETE` se mantienen deshabilitadas en la interfaz pública hasta que el backend en Xano valide la propiedad y los permisos del propietario por token.

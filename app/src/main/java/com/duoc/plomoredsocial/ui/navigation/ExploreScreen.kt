@@ -61,14 +61,13 @@ internal fun ExploreScreen(
     var mapVisible by rememberSaveable { mutableStateOf(false) }
     var mapActivityId by rememberSaveable { mutableStateOf<String?>(null) }
     var accessRequested by rememberSaveable { mutableStateOf(false) }
-    var diagnosticExpanded by rememberSaveable { mutableStateOf(false) }
 
-    val rawRemoteList = remoteState.activities ?: emptyList()
-    val filteredRemoteActivities = if (filters.commune.isBlank() && filters.query.isBlank()) rawRemoteList else rawRemoteList.filter {
+    val rawList = remoteState.activities ?: emptyList()
+    val filteredActivities = if (filters.commune.isBlank() && filters.query.isBlank()) rawList else rawList.filter {
         (filters.commune.isBlank() || it.commune.contains(filters.commune.trim(), ignoreCase = true)) &&
         (filters.query.isBlank() || it.title.contains(filters.query.trim(), ignoreCase = true))
     }
-    val selectedRemoteActivity = rawRemoteList.firstOrNull { it.id == selectedRemoteId }
+    val selectedRemoteActivity = rawList.firstOrNull { it.id == selectedRemoteId }
 
     val context = LocalContext.current
     val notifier = remember(context) { ActivityCreatedNotifier(context.applicationContext) }
@@ -199,12 +198,12 @@ internal fun ExploreScreen(
                 state.failed && remoteState.error != null -> item(key = "error") {
                     MygosNotice(stringResource(R.string.home_feed_error), isError = true)
                 }
-                state.activities.isEmpty() && filteredRemoteActivities.isEmpty() -> item(key = "empty") {
+                state.activities.isEmpty() && filteredActivities.isEmpty() -> item(key = "empty") {
                     MygosNotice("Todavía no hay actividades guardadas en este dispositivo. Puedes crearlas aquí al iniciar sesión.")
                 }
             }
 
-            if (!state.loading && state.activities.isNotEmpty() && localResults.isEmpty() && filteredRemoteActivities.isEmpty()) {
+            if (!state.loading && state.activities.isNotEmpty() && localResults.isEmpty() && filteredActivities.isEmpty()) {
                 item(key = "no_results") {
                     MygosCard {
                         Text("No encontramos actividades con esos filtros.")
@@ -220,24 +219,9 @@ internal fun ExploreScreen(
             }
 
             // Tarjetas remotas de Xano
-            items(filteredRemoteActivities, key = { "xano_${it.id}" }, contentType = { "xano_activity" }) { activity ->
+            items(filteredActivities, key = { "xano_${it.id}" }, contentType = { "xano_activity" }) { activity ->
                 XanoActivityCard(activity) {
                     selectedRemoteId = activity.id
-                }
-            }
-
-            item(key = "diagnostic_toggle") {
-                OutlinedButton(
-                    onClick = { diagnosticExpanded = !diagnosticExpanded },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(if (diagnosticExpanded) "Ocultar panel de 7 Endpoints REST (Rúbrica)" else "Mostrar panel de 7 Endpoints REST (Rúbrica)")
-                }
-            }
-
-            if (diagnosticExpanded) {
-                item(key = "online_activities_diagnostic") {
-                    OnlineActivitiesSection(onlineActivities)
                 }
             }
         }
@@ -254,7 +238,8 @@ private fun ActivityCard(activity: ActivityEntity, participants: Int, onView: ()
                     modifier = Modifier.size(32.dp), tint = MaterialTheme.colorScheme.primary)
             }
         }
-        Text(activity.title, style = MaterialTheme.typography.titleLarge)
+        Text(activity.title, style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.testTag("activity_${activity.id}"))
         ActivityInformation(activity, participants)
         OutlinedButton(onClick = onView,
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("view_activity_${activity.id}")) {
@@ -319,95 +304,5 @@ private fun RemoteActivityDetailDialog(
                 MygosNotice("La edición (PATCH) y eliminación (DELETE) están bloqueadas en la interfaz mientras Xano no valide la autorización y propiedad del propietario del registro (HTTP 401/403).", isError = true)
             }
         }
-    }
-}
-
-/** Panel secundario de diagnóstico de actividades remotas. */
-@Composable
-private fun OnlineActivitiesSection(viewModel: XanoActivitiesViewModel) {
-    val state = viewModel.uiState
-    var detailId by rememberSaveable { mutableStateOf("") }
-    var filterComuna by rememberSaveable { mutableStateOf("") }
-    var createTitulo by rememberSaveable { mutableStateOf("") }
-    var createComuna by rememberSaveable { mutableStateOf("") }
-    var createCupos by rememberSaveable { mutableStateOf("5") }
-    var updateId by rememberSaveable { mutableStateOf("") }
-    var deleteId by rememberSaveable { mutableStateOf("") }
-
-    MygosCard(Modifier.testTag("xano_activities_section")) {
-        Text("Diagnóstico de actividades Xano", style = MaterialTheme.typography.titleLarge)
-        Text("Consulta y revisión de los endpoints de actividades.",
-            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-
-        state.actionMessage?.let { MygosNotice(it) }
-        state.actionError?.let { MygosNotice(it, isError = true) }
-
-        if (state.loading || state.actionInProgress) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                Text("Ejecutando en Xano…")
-            }
-        }
-        state.error?.let { MygosNotice(it, isError = true) }
-
-        OutlinedButton(onClick = { viewModel.refresh(filterComuna.ifBlank { null }) }, enabled = !state.loading,
-            modifier = Modifier.fillMaxWidth().testTag("xano_retry")) {
-            Text("1. GET /actividades")
-        }
-
-        OutlinedTextField(value = detailId, onValueChange = { detailId = it },
-            label = { Text("ID para GET /actividades/{id}") }, singleLine = true,
-            modifier = Modifier.fillMaxWidth())
-        OutlinedButton(onClick = { viewModel.getDetail(detailId) },
-            enabled = detailId.isNotBlank() && !state.detailLoading,
-            modifier = Modifier.fillMaxWidth()) {
-            Text("2. GET /actividades/{id}")
-        }
-        state.detail?.let {
-            Text(it.redactedForDisplay().toString(), style = MaterialTheme.typography.bodySmall)
-        }
-
-        OutlinedButton(
-            onClick = {
-                viewModel.createRemoteActivity(
-                    createTitulo.ifBlank { "Test Rúbrica" },
-                    "Diagnóstico",
-                    createComuna.ifBlank { "Santiago" },
-                    "Ubicación",
-                    "Auditor",
-                    createCupos.toIntOrNull()?.coerceIn(1, 10) ?: 5,
-                    "30-10-2026, 19:20",
-                    null,
-                    null
-                ) {}
-            },
-            enabled = !state.actionInProgress,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("3. POST /actividades")
-        }
-
-        OutlinedTextField(value = updateId, onValueChange = { updateId = it },
-            label = { Text("ID para PATCH") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-        MygosNotice("PATCH /actividades/{id} está deshabilitado en UI hasta que Xano valide autorización por propietario (401/403).")
-        OutlinedButton(
-            onClick = { /* Deshabilitado por seguridad */ },
-            enabled = false,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("4. PATCH /actividades/{id} (Deshabilitado)")
-        }
-
-        OutlinedTextField(value = deleteId, onValueChange = { deleteId = it },
-            label = { Text("ID para DELETE") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-        MygosNotice("DELETE /actividades/{id} está deshabilitado en UI hasta que Xano valide autorización por propietario (401/403).")
-        OutlinedButton(
-            onClick = { /* Deshabilitado por seguridad */ },
-            enabled = false,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("5. DELETE /actividades/{id} (Deshabilitado)")
-        }
-
     }
 }

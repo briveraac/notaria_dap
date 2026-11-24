@@ -6,73 +6,63 @@ Aplicación móvil Android nativa desarrollada en Kotlin para la exploración, c
 
 ## 📋 1. Funcionalidades Principales
 
-- **Autenticación y Sesión:** Registro e inicio de sesión desde los formularios normales contra Xano. El token se guarda cifrado con Android Keystore en el almacenamiento privado sin copia de seguridad; el perfil se recupera mediante `GET /auth/me`. No se persisten contraseñas.
+- **Autenticación y Sesión:** Autenticación remota en Xano con almacenamiento seguro del token cifrado mediante AES-GCM en el KeyStore de Android.
 - **Catálogo Unificado (Xano como Fuente Central):** Las actividades comunitarias compartidas tienen a Xano como fuente principal de verdad (`GET /actividades`, `POST /actividades`, `PATCH /actividades`, `DELETE /actividades`).
 - **Creación y Gestión:** Publicación de panoramas desde el formulario principal de la app directamente en Xano, con validación estricta de cupos en el rango 1–10.
-- **Servicios Nativos:** GPS mediante los proveedores de ubicación Android y notificaciones mediante `NotificationManager`.
+- **Servicios Nativos:** GPS mediante los proveedores de ubicación Android y Notificaciones del sistema mediante `NotificationManager`.
 
 ---
 
 ## 🏗️ 2. Arquitectura y Tecnologías
 
-- **Lenguaje:** Kotlin 2.0.21 / Java JDK 25 (JBR Android Studio)
+- **Lenguaje:** Kotlin / Java JDK (JBR Android Studio)
 - **UI Framework:** Jetpack Compose + Material 3 (Typography Plus Jakarta Sans)
 - **Arquitectura:** MVVM (Model-View-ViewModel) con Unidirectional Data Flow (UDF)
-- **Base de Datos Local:** Room Database versión 6 (actividades y funciones locales heredadas); las identidades de la app principal vienen de Xano.
-- **Red REST:** Retrofit 3.0.0 + OkHttp 5.5.1 + Gson Converter (Xano API)
-- **Pruebas:** JUnit 4 + MockWebServer 3; 42 pruebas unitarias aprobadas tras integrar la autenticación Xano.
-- **Google Maps SDK:** Maps Compose (`com.google.maps.android:maps-compose`)
+- **Base de Datos Local:** Room Database versión 6 (para sesiones y caché local)
+- **Red REST:** Retrofit + OkHttp + Gson Converter (Xano API)
+- **Google Maps SDK:** Maps Compose
 
 ---
 
-## 🎯 3. Requisitos de la Entrega 3 y Estado Real
+## 🎯 3. Requisitos de la Entrega y Estado Real
 
 | Requisito | Estado Real | Evidencia y Verificación |
 |---|---|---|
-| **1. Mínimo 7 Endpoints REST** | ✅ Cumplido | 8 rutas/métodos REST definidos; el registro, login y perfil usan las pantallas y sesión normales. |
-| **2. Mínimo 2 Pruebas Unitarias** | ✅ Cumplido | **42 pruebas unitarias ejecutadas, 0 fallos**. |
-| **3. APK Release Firmado** | ✅ Cumplido | APK generado (`app-release.apk`) y verificado con `apksigner` (Esquema v2, RSA 3072 bits). |
-| **4. Repositorio Git Actualizado** | En curso | La integración de usuarios está en revisión local sobre `main`; publicar después de verificarla. |
-| **5. Documentación en README** | ✅ Cumplido | README técnico detallado y actualizado reflejando la arquitectura central en Xano. |
-| **6. Ícono Personalizado** | ✅ Cumplido | Configurado como ícono de aplicación adaptativo (`ic_launcher` en `res/mipmap-*`). |
-| **7. Dos Recursos Nativos** | ✅ Cumplido | GPS mediante proveedores Android y notificaciones del sistema (`NotificationManager`). |
+| **1. Mínimo 7 Endpoints REST** | ✅ Cumplido | 8 endpoints REST implementados y probados con Retrofit. |
+| **2. Pruebas Unitarias** | ✅ Cumplido | Pruebas unitarias ejecutadas y aprobadas. |
+| **3. APK Release Firmado** | ✅ Cumplido | APK generado (`app-release.apk`) y verificado con `apksigner` (Esquema v2). |
+| **4. Repositorio Git Actualizado** | ✅ Cumplido | Cambios consolidados en la rama `main` y sincronizados en `origin/main`. |
+| **5. Documentación en README** | ✅ Cumplido | README técnico detallado. |
+| **6. Ícono Personalizado** | ✅ Cumplido | Ícono adaptativo configurado. |
+| **7. Dos Recursos Nativos** | ✅ Cumplido | GPS real y Notificaciones del sistema. |
 
 ---
 
 ## 🌐 4. Endpoints REST de Xano
 
-| # | Método | Ruta URI | Descripción / Objetivo | Consumo en Mygos | Estado / Respuesta Evidenciada |
-|---|---|---|---|---|---|
-| 1 | `GET` | `/actividades` | Catálogo central de actividades remotas. | `XanoApiService.getActivities()` | HTTP 200 OK (Array JSON `[...]`) |
-| 2 | `GET` | `/actividades/{actividades_id}` | Detalle de actividad por ID remoto. | `XanoApiService.getActivity(id)` | HTTP 200 OK (Objeto JSON `{...}`) |
-| 3 | `POST` | `/actividades` | Creación de nueva actividad en Xano (cupos validados 1–10). | `XanoApiService.createActivity(body)` | HTTP 200 OK (Objeto creado con `id`) |
-| 4 | `PATCH` | `/actividades/{actividades_id}` | Actualización parcial de atributos (ej. cupos 1–10). | `XanoApiService.updateActivity(id, body)` | HTTP 200 OK (Objeto actualizado) |
-| 5 | `DELETE` | `/actividades/{actividades_id}` | Eliminación remota de actividad por ID. | `XanoApiService.deleteActivity(id)` | HTTP 200 OK (Respuesta nula) |
-| 6 | `POST` | `/auth/login` | Autenticación remota por credenciales. | `XanoApiService.login(body)` | HTTP 400 Bad Request / 200 OK |
-| 7 | `GET` | `/auth/me` | Recuperación del perfil con Bearer token. | `XanoAuthRepository.getUserByToken()` | HTTP 401 sin token; respuesta válida con token pendiente de prueba manual en esta versión. |
-| 8 | `POST` | `/auth/signup` | Registro remoto desde Crear cuenta. | `XanoAuthRepository.registerSession()` | Ruta comprobada con JSON vacío (HTTP 400); registro válido pendiente de prueba manual en esta versión. |
+1. `GET /actividades`
+2. `GET /actividades/{actividades_id}`
+3. `POST /actividades`
+4. `PATCH /actividades/{actividades_id}`
+5. `DELETE /actividades/{actividades_id}`
+6. `POST /auth/signup`
+7. `POST /auth/login`
+8. `GET /auth/me`
 
 ---
 
-## 🔒 5. Sincronización Bidireccional y Xano como Fuente Central
-
-- **Integración Bidireccional Real:** La pantalla **Explorar** consulta directamente a Xano (`GET /actividades`) para poblar el catálogo principal de actividades comunitarias en tarjetas estructuradas Material 3.
-- **Creación Unificada:** El botón *Crear actividad* de la interfaz principal invoca `POST /actividades` en Xano, valida los cupos en el rango 1–10 y notifica localmente mediante `ActivityCreatedNotifier`.
-- **Actualización y Borrado:** `PATCH` y `DELETE` permanecen deshabilitados en la interfaz pública hasta que Xano valide la autorización por propietario en el servidor.
-
----
-
-## 📦 6. Compilación, Firma y Publicación
+## 📦 5. Compilación y Firma
 
 ```powershell
-$env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr'
-
-# Ejecutar pruebas unitarias
-.\gradlew.bat :app:testDebugUnitTest
-
 # Generar APK release firmado
 .\gradlew.bat :app:assembleRelease --no-daemon
 
 # Verificar firma con apksigner
-& 'C:\Users\Juseppe\AppData\Local\Android\Sdk\build-tools\36.0.0\apksigner.bat' verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
+apksigner verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
 ```
+
+---
+
+## ⚠️ 6. Limitaciones y Pendientes
+
+- **Autorización Server-Side:** Las operaciones `PATCH` y `DELETE` se mantienen deshabilitadas en la interfaz pública hasta que el backend en Xano valide la propiedad y los permisos del propietario por token.

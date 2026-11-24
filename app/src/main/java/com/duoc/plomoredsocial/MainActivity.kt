@@ -16,6 +16,7 @@ import com.duoc.plomoredsocial.viewmodel.ContactViewModel
 import com.duoc.plomoredsocial.repository.ContactRepository
 import com.duoc.plomoredsocial.model.MygosDatabase
 import com.duoc.plomoredsocial.repository.XanoAuthRepository
+import com.duoc.plomoredsocial.repository.RoomAuthRepository
 import com.duoc.plomoredsocial.repository.XanoSessionStore
 import com.duoc.plomoredsocial.data.remote.xano.XanoApiClient
 import com.duoc.plomoredsocial.viewmodel.RegisterViewModel
@@ -33,7 +34,8 @@ class MainActivity : ComponentActivity() {
         val contactViewModel = ViewModelProvider(
             this, ContactViewModel.Factory(repository)
         )[ContactViewModel::class.java]
-        val authRepository = XanoAuthRepository(XanoApiClient.service)
+        val roomAuthRepo = RoomAuthRepository(MygosDatabase.getInstance(applicationContext), assets)
+        val authRepository = XanoAuthRepository(XanoApiClient.service, roomAuthRepo)
         val sessionStore = XanoSessionStore(applicationContext.noBackupFilesDir)
         val registerViewModel = ViewModelProvider(
             this, RegisterViewModel.Factory(authRepository, sessionStore)

@@ -469,18 +469,42 @@ private fun LocationPicker(initial: LatLng?, onDismiss: () -> Unit, onConfirm: (
         val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val coarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
         if (!fine && !coarse) {
-            locationMessage = "Permiso de ubicación denegado. Puedes elegir el punto manualmente en el mapa."
+            locationMessage = "Permiso de ubicación denegado. Puedes elegir el punto manualmente en el mapa o reintentar."
             return
         }
         if (!LocationManagerCompat.isLocationEnabled(locationManager)) {
             locationMessage = "La ubicación del dispositivo está desactivada. Actívala o toca el mapa."
             return
         }
+
+        // 1. First check last known location across providers for instant response
+        var bestLocation: android.location.Location? = null
+        try {
+            for (p in locationManager.allProviders) {
+                val loc = locationManager.getLastKnownLocation(p)
+                if (loc != null) {
+                    if (bestLocation == null || loc.time > bestLocation.time) {
+                        bestLocation = loc
+                    }
+                }
+            }
+        } catch (_: SecurityException) { }
+
+        if (bestLocation != null && bestLocation.latitude.isFinite() && bestLocation.longitude.isFinite()) {
+            val point = LatLng(bestLocation.latitude, bestLocation.longitude)
+            latitude = point.latitude
+            longitude = point.longitude
+            approximate = !fine
+            scope.launch { camera.animate(CameraUpdateFactory.newLatLngZoom(point, 16f)) }
+            locationMessage = "¡Ubicación encontrada!"
+            return
+        }
+
         val provider = selectLocationProvider(fine, coarse,
             locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER),
             locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))
         if (provider == null) {
-            locationMessage = "No hay un proveedor de ubicación disponible. Puedes tocar el mapa."
+            locationMessage = "No hay un proveedor de ubicación disponible. Toca el mapa para elegir el punto."
             return
         }
         activeRequest.value?.cancel()
@@ -496,7 +520,7 @@ private fun LocationPicker(initial: LatLng?, onDismiss: () -> Unit, onConfirm: (
                 activeRequest.value = null
                 locating = false
                 if (fix == null || !fix.latitude.isFinite() || !fix.longitude.isFinite()) {
-                    locationMessage = "No se obtuvo una ubicación actual. Intenta de nuevo o toca el mapa."
+                    locationMessage = "No se obtuvo una ubicación actual. Pulsa 'Reintentar' o toca el mapa."
                 } else {
                     val point = LatLng(fix.latitude, fix.longitude)
                     latitude = point.latitude
@@ -506,22 +530,22 @@ private fun LocationPicker(initial: LatLng?, onDismiss: () -> Unit, onConfirm: (
                 }
             }
             scope.launch {
-                delay(20_000)
+                delay(8_000)
                 if (activeRequest.value === signal) {
                     activeRequest.value = null
                     signal.cancel()
                     locating = false
-                    locationMessage = "La búsqueda de ubicación tardó demasiado. Intenta de nuevo o toca el mapa."
+                    locationMessage = "La búsqueda tardó demasiado. Pulsa 'Reintentar' o toca el mapa."
                 }
             }
         } catch (_: SecurityException) {
             activeRequest.value = null
             locating = false
-            locationMessage = "El permiso de ubicación cambió. Vuelve a intentarlo o toca el mapa."
+            locationMessage = "El permiso de ubicación cambió. Reintenta o toca el mapa."
         } catch (_: RuntimeException) {
             activeRequest.value = null
             locating = false
-            locationMessage = "No se pudo consultar la ubicación. Puedes elegir el punto en el mapa."
+            locationMessage = "No se pudo consultar la ubicación. Toca el mapa."
         }
     }
 
@@ -541,7 +565,7 @@ private fun LocationPicker(initial: LatLng?, onDismiss: () -> Unit, onConfirm: (
                     else permissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION,
                         Manifest.permission.ACCESS_FINE_LOCATION))
                 }, enabled = !locating, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("use_device_location")) {
-                    Text(if (locating) "Buscando ubicación..." else "Usar mi ubicación")
+                    Text(if (locating) "Buscando ubicación..." else "Usar mi ubicación (Reintentar)")
                 }
                 if (locating) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 locationMessage?.let { MygosNotice(it, isError = true) }

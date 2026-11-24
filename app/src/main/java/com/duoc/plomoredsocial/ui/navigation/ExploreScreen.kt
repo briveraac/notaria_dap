@@ -16,6 +16,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.os.Build
@@ -39,7 +40,7 @@ import com.duoc.plomoredsocial.viewmodel.XanoActivitiesViewModel
 import com.duoc.plomoredsocial.ui.activities.*
 import java.util.UUID
 
-// Explorar unifica las actividades comunitarias con Xano como fuente central de verdad.
+// Explorar unifica las actividades comunitarias con Xano como fuente central de verdad y conserva la caché de Room.
 @Composable
 internal fun ExploreScreen(
     user: AuthUser?,
@@ -48,21 +49,26 @@ internal fun ExploreScreen(
     onRegister: () -> Unit,
     activitiesViewModel: ActivitiesViewModel = viewModel()
 ) {
+    val filters: com.duoc.plomoredsocial.viewmodel.ExploreViewModel = viewModel()
     val onlineActivities: XanoActivitiesViewModel = viewModel(factory = XanoActivitiesViewModel.Factory())
     val remoteState = onlineActivities.uiState
+    val localResults = filters.filter(state.activities)
     val listState = rememberLazyListState()
 
+    var selectedLocalId by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedRemoteId by rememberSaveable { mutableStateOf<String?>(null) }
     var creating by rememberSaveable { mutableStateOf(false) }
+    var mapVisible by rememberSaveable { mutableStateOf(false) }
+    var mapActivityId by rememberSaveable { mutableStateOf<String?>(null) }
     var accessRequested by rememberSaveable { mutableStateOf(false) }
-    var filterCommune by rememberSaveable { mutableStateOf("") }
     var diagnosticExpanded by rememberSaveable { mutableStateOf(false) }
 
-    val rawList = remoteState.activities ?: emptyList()
-    val filteredActivities = if (filterCommune.isBlank()) rawList else rawList.filter {
-        it.commune.contains(filterCommune, ignoreCase = true) || it.title.contains(filterCommune, ignoreCase = true)
+    val rawRemoteList = remoteState.activities ?: emptyList()
+    val filteredRemoteActivities = if (filters.commune.isBlank() && filters.query.isBlank()) rawRemoteList else rawRemoteList.filter {
+        (filters.commune.isBlank() || it.commune.contains(filters.commune.trim(), ignoreCase = true)) &&
+        (filters.query.isBlank() || it.title.contains(filters.query.trim(), ignoreCase = true))
     }
-    val selectedRemoteActivity = rawList.firstOrNull { it.id == selectedRemoteId }
+    val selectedRemoteActivity = rawRemoteList.firstOrNull { it.id == selectedRemoteId }
 
     val context = LocalContext.current
     val notifier = remember(context) { ActivityCreatedNotifier(context.applicationContext) }
@@ -75,25 +81,43 @@ internal fun ExploreScreen(
         creating = false
     }
 
+    if (mapVisible) {
+        ActivityMapDialog(localResults, mapActivityId,
+            onDismiss = { mapVisible = false },
+            onDetail = { selectedLocalId = it; mapVisible = false })
+    }
+
+    state.activities.firstOrNull { it.id == selectedLocalId }?.let { activity ->
+        ActivityDetail(activity, user, activitiesViewModel,
+            onDismiss = { selectedLocalId = null },
+            onMap = {
+                selectedLocalId = null
+                mapActivityId = activity.id
+                mapVisible = true
+            },
+            onAccess = { selectedLocalId = null; accessRequested = true })
+    }
+
     if (creating && user != null) {
         ActivityForm(
-            saving = remoteState.actionInProgress || awaitingPermission,
-            failed = remoteState.actionError != null,
-            onDismiss = { if (!remoteState.actionInProgress && !awaitingPermission) creating = false },
+            saving = activitiesViewModel.saving || remoteState.actionInProgress || awaitingPermission,
+            failed = activitiesViewModel.error || remoteState.actionError != null,
+            onDismiss = { if (!activitiesViewModel.saving && !remoteState.actionInProgress && !awaitingPermission) creating = false },
             onSave = { title, commune, place, schedule, description, location, capacity ->
                 val validCupos = capacity.coerceIn(1, 10)
                 val entity = ActivityEntity(UUID.randomUUID().toString(), title, commune, place, schedule, location?.latitude, location?.longitude, user.id, description, validCupos)
-                onlineActivities.createRemoteActivity(
-                    titulo = title,
-                    descripcion = description,
-                    comuna = commune,
-                    ubicacion = place,
-                    organizador = user.name.ifBlank { user.email },
-                    cupos = validCupos,
-                    fecha = schedule,
-                    latitude = location?.latitude,
-                    longitude = location?.longitude
-                ) { _ ->
+                activitiesViewModel.create(entity) {
+                    onlineActivities.createRemoteActivity(
+                        titulo = title,
+                        descripcion = description,
+                        comuna = commune,
+                        ubicacion = place,
+                        organizador = user.name.ifBlank { user.email },
+                        cupos = validCupos,
+                        fecha = schedule,
+                        latitude = location?.latitude,
+                        longitude = location?.longitude
+                    ) { _ -> }
                     if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context,
                             android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                         pendingEntity = entity
@@ -119,7 +143,7 @@ internal fun ExploreScreen(
             modifier = Modifier.testTag("home_access_dialog"),
             onDismissRequest = { accessRequested = false },
             title = { Text("Participa en Mygos") },
-            text = { Text("Inicia sesión para crear una actividad compartida en Xano.") },
+            text = { Text("Inicia sesión para crear una actividad o participar.") },
             confirmButton = {
                 TextButton(onClick = { accessRequested = false; onLogin() }) { Text("Iniciar sesión") }
             },
@@ -140,49 +164,63 @@ internal fun ExploreScreen(
         ) {
             item(key = "explore_header") {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    MygosHeader("Explorar", "Actividades comunitarias compartidas en Xano (Fuente Central).")
+                    MygosHeader("Explorar", "Encuentra un plan cerca de ti. Busca por título, comuna o punto de encuentro.")
                     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         MygosPrimaryButton("Crear actividad", {
                             if (user == null) accessRequested = true else creating = true
                         }, modifier = Modifier.weight(1f).fillMaxHeight())
-                        OutlinedButton(onClick = { onlineActivities.refresh() },
-                            modifier = Modifier.weight(1f).fillMaxHeight().heightIn(min = 52.dp)) { Text("Actualizar") }
+                        OutlinedButton(onClick = { mapActivityId = null; mapVisible = true },
+                            modifier = Modifier.weight(1f).fillMaxHeight().heightIn(min = 52.dp)) { Text("Ver mapa") }
                     }
                 }
             }
             item(key = "filters") {
                 MygosCard {
-                    OutlinedTextField(
-                        value = filterCommune,
-                        onValueChange = { filterCommune = it },
-                        label = { Text("Filtrar por título o comuna") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth().testTag("explore_commune"),
-                        leadingIcon = { Icon(Icons.Filled.Search, null) }
-                    )
-                    if (filterCommune.isNotEmpty()) {
-                        TextButton(onClick = { filterCommune = "" }, modifier = Modifier.testTag("explore_clear")) {
-                            Text("Limpiar filtro")
-                        }
+                    OutlinedTextField(value = filters.query, onValueChange = filters::updateQuery,
+                        label = { Text("Buscar actividades") }, singleLine = true,
+                        modifier = Modifier.fillMaxWidth().testTag("explore_query"),
+                        leadingIcon = { Icon(Icons.Filled.Search, null) })
+                    OutlinedTextField(value = filters.commune, onValueChange = filters::updateCommune,
+                        label = { Text("Filtrar por comuna") }, singleLine = true,
+                        modifier = Modifier.fillMaxWidth().testTag("explore_commune"))
+                    if (filters.query.isNotEmpty() || filters.commune.isNotEmpty()) {
+                        TextButton(onClick = filters::clear,
+                            modifier = Modifier.testTag("explore_clear")) { Text("Limpiar filtros") }
                     }
                 }
             }
+
             when {
-                remoteState.loading -> item(key = "loading") {
+                state.loading && remoteState.loading -> item(key = "loading") {
                     Box(Modifier.fillMaxWidth().testTag("explore_loading"), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
                 }
-                remoteState.error != null -> item(key = "error") {
-                    MygosNotice(remoteState.error ?: "Error al conectar con Xano", isError = true)
+                state.failed && remoteState.error != null -> item(key = "error") {
+                    MygosNotice(stringResource(R.string.home_feed_error), isError = true)
                 }
-                filteredActivities.isEmpty() -> item(key = "empty") {
-                    MygosNotice("No hay actividades publicadas en Xano con este filtro.")
+                state.activities.isEmpty() && filteredRemoteActivities.isEmpty() -> item(key = "empty") {
+                    MygosNotice("Todavía no hay actividades guardadas en este dispositivo. Puedes crearlas aquí al iniciar sesión.")
                 }
             }
 
-            // Catálogo unificado de actividades provenientes de Xano en tarjetas estructuradas Material 3
-            items(filteredActivities, key = { it.id }, contentType = { "xano_activity" }) { activity ->
+            if (!state.loading && state.activities.isNotEmpty() && localResults.isEmpty() && filteredRemoteActivities.isEmpty()) {
+                item(key = "no_results") {
+                    MygosCard {
+                        Text("No encontramos actividades con esos filtros.")
+                        MygosPrimaryButton("Limpiar filtros", filters::clear)
+                    }
+                }
+            }
+
+            // Tarjetas locales de Room
+            items(localResults, key = { "local_${it.id}" }, contentType = { "local_activity" }) { activity ->
+                ActivityCard(activity, state.participantCounts[activity.id] ?: 0,
+                    onView = { selectedLocalId = activity.id })
+            }
+
+            // Tarjetas remotas de Xano
+            items(filteredRemoteActivities, key = { "xano_${it.id}" }, contentType = { "xano_activity" }) { activity ->
                 XanoActivityCard(activity) {
                     selectedRemoteId = activity.id
                 }
@@ -207,8 +245,37 @@ internal fun ExploreScreen(
 }
 
 @Composable
+private fun ActivityCard(activity: ActivityEntity, participants: Int, onView: () -> Unit) {
+    MygosCard(Modifier.testTag("activity_${activity.id}")) {
+        Surface(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.primaryContainer) {
+            Box(Modifier.height(72.dp), contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.Place, contentDescription = null,
+                    modifier = Modifier.size(32.dp), tint = MaterialTheme.colorScheme.primary)
+            }
+        }
+        Text(activity.title, style = MaterialTheme.typography.titleLarge)
+        ActivityInformation(activity, participants)
+        OutlinedButton(onClick = onView,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("view_activity_${activity.id}")) {
+            Text(stringResource(R.string.home_view_activity))
+        }
+    }
+}
+
+@Composable
+private fun ActivityInformation(activity: ActivityEntity, participants: Int) {
+    Text(activity.commune, style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary)
+    Text(activity.schedule, style = MaterialTheme.typography.bodyMedium)
+    Text(activity.meetingPoint, style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant)
+    MygosMetric("Participantes: $participants/${activity.capacity}")
+}
+
+@Composable
 private fun XanoActivityCard(activity: XanoActivityDto, onClick: () -> Unit) {
-    MygosCard {
+    MygosCard(Modifier.testTag("xano_activity_${activity.id}")) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.medium,

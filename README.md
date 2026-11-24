@@ -4,7 +4,7 @@ Aplicación móvil Android nativa desarrollada en Kotlin para la exploración, c
 
 ---
 
-1. Funcionalidades Principales
+--1. Funcionalidades Principales
 
 - **Autenticación y Sesión:** Autenticación remota en Xano con almacenamiento seguro del token cifrado mediante AES-GCM en el KeyStore de Android.
 - **Catálogo Unificado (Xano como Fuente Central):** Las actividades comunitarias compartidas tienen a Xano como fuente principal de verdad (`GET /actividades`, `POST /actividades`, `PATCH /actividades`, `DELETE /actividades`).
@@ -13,7 +13,7 @@ Aplicación móvil Android nativa desarrollada en Kotlin para la exploración, c
 
 ---
 
-2. Arquitectura y Tecnologías
+--2. Arquitectura y Tecnologías
 
 - **Lenguaje:** Kotlin / Java JDK (JBR Android Studio)
 - **UI Framework:** Jetpack Compose + Material 3 (Typography Plus Jakarta Sans)
@@ -24,7 +24,7 @@ Aplicación móvil Android nativa desarrollada en Kotlin para la exploración, c
 
 ---
 
-3. Requisitos de la Entrega y Estado Real
+--3. Requisitos de la Entrega y Estado Real
 
 | Requisito | Estado Real | Evidencia y Verificación |
 |---|---|---|
